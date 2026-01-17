@@ -141,3 +141,17 @@ volumes:
   prometheus_data:
   alertmanager_data:
   grafana_data:
+
+  # Metabase - SQL Analytics
+  metabase:
+    image: metabase/metabase:latest
+    container_name: cloudwalk-metabase
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    volumes:
+      - ./data:/data:ro
+    environment:
+      - MB_DB_FILE=/data/metabase.db
+    networks:
+      - monitoring
