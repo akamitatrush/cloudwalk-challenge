@@ -1,0 +1,101 @@
+[
+  {
+    "severity": "P3",
+    "title": "\ud83d\udcc8 SPIKE DETECTED @ 02h",
+    "message": "Transactions at 02h are 614.3% above normal.",
+    "metric": "checkout_transactions",
+    "current_value": 3,
+    "expected_value": 0.42,
+    "deviation_percent": 614.2857142857143,
+    "timestamp": "2026-01-16T05:07:22.004311",
+    "hour": 2
+  },
+  {
+    "severity": "P3",
+    "title": "\ud83d\udea8 ZERO TRANSACTIONS @ 03h",
+    "message": "No transactions recorded at 03h. Expected ~0 based on weekly average.",
+    "metric": "checkout_transactions",
+    "current_value": 0,
+    "expected_value": 0.42,
+    "deviation_percent": -100.0,
+    "timestamp": "2026-01-16T05:07:22.004379",
+    "hour": 3
+  },
+  {
+    "severity": "P3",
+    "title": "\ud83d\udea8 ZERO TRANSACTIONS @ 04h",
+    "message": "No transactions recorded at 04h. Expected ~0 based on weekly average.",
+    "metric": "checkout_transactions",
+    "current_value": 0,
+    "expected_value": 0.14,
+    "deviation_percent": -100.0,
+    "timestamp": "2026-01-16T05:07:22.004434",
+    "hour": 4
+  },
+  {
+    "severity": "P3",
+    "title": "\ud83d\udcc8 SPIKE DETECTED @ 07h",
+    "message": "Transactions at 07h are 233.3% above normal.",
+    "metric": "checkout_transactions",
+    "current_value": 10,
+    "expected_value": 3.0,
+    "deviation_percent": 233.33333333333334,
+    "timestamp": "2026-01-16T05:07:22.004566",
+    "hour": 7
+  },
+  {
+    "severity": "P3",
+    "title": "\ud83d\udcc8 SPIKE DETECTED @ 08h",
+    "message": "Transactions at 08h are 573.9% above normal.",
+    "metric": "checkout_transactions",
+    "current_value": 25,
+    "expected_value": 3.71,
+    "deviation_percent": 573.8544474393531,
+    "timestamp": "2026-01-16T05:07:22.004622",
+    "hour": 8
+  },
+  {
+    "severity": "P3",
+    "title": "\ud83d\udcc8 SPIKE DETECTED @ 09h",
+    "message": "Transactions at 09h are 255.0% above normal.",
+    "metric": "checkout_transactions",
+    "current_value": 36,
+    "expected_value": 10.14,
+    "deviation_percent": 255.02958579881656,
+    "timestamp": "2026-01-16T05:07:22.004816",
+    "hour": 9
+  },
+  {
+    "severity": "P1",
+    "title": "\ud83d\udea8 ZERO TRANSACTIONS @ 15h",
+    "message": "No transactions recorded at 15h. Expected ~22 based on weekly average.",
+    "metric": "checkout_transactions",
+    "current_value": 0,
+    "expected_value": 22.427,
+    "deviation_percent": -100.0,
+    "timestamp": "2026-01-16T05:07:22.005054",
+    "hour": 15
+  },
+  {
+    "severity": "P1",
+    "title": "\ud83d\udea8 ZERO TRANSACTIONS @ 16h",
+    "message": "No transactions recorded at 16h. Expected ~22 based on weekly average.",
+    "metric": "checkout_transactions",
+    "current_value": 0,
+    "expected_value": 21.57,
+    "deviation_percent": -100.0,
+    "timestamp": "2026-01-16T05:07:22.005119",
+    "hour": 16
+  },
+  {
+    "severity": "P1",
+    "title": "\ud83d\udea8 ZERO TRANSACTIONS @ 17h",
+    "message": "No transactions recorded at 17h. Expected ~18 based on weekly average.",
+    "metric": "checkout_transactions",
+    "current_value": 0,
+    "expected_value": 17.71,
+    "deviation_percent": -100.0,
+    "timestamp": "2026-01-16T05:07:22.005175",
+    "hour": 17
+  }
+]

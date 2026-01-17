@@ -1,0 +1,230 @@
+# =============================================================================
+# CLOUDWALK PROMETHEUS ALERT RULES
+# Checkout Transaction Monitoring
+# =============================================================================
+# 
+# How to use:
+# 1. Place this file in your Prometheus rules directory
+# 2. Add to prometheus.yml: rule_files: ["checkout_alerts.yml"]
+# 3. Reload Prometheus: curl -X POST http://localhost:9090/-/reload
+#
+# Author: Sérgio
+# Version: 1.0
+# =============================================================================
+
+groups:
+  # ===========================================================================
+  # CRITICAL ALERTS - P1 (Immediate action required)
+  # ===========================================================================
+  - name: checkout_critical_alerts
+    interval: 1m
+    rules:
+      # ALERT: Zero transactions during business hours
+      - alert: ZeroTransactionsCritical
+        expr: |
+          checkout_transactions_current == 0 
+          and ON() hour() >= 10 
+          and ON() hour() <= 22
+          and checkout_transactions_avg_week > 5
+        for: 5m
+        labels:
+          severity: critical
+          team: monitoring
+          service: checkout
+        annotations:
+          summary: "🚨 CRITICAL: Zero transactions detected"
+          description: |
+            No transactions recorded for the current hour.
+            Expected: {{ $value }} based on weekly average.
+            This indicates a potential system outage.
+          runbook_url: "https://wiki.cloudwalk.io/runbooks/zero-transactions"
+          dashboard_url: "https://grafana.cloudwalk.io/d/cloudwalk-checkout-monitoring"
+
+      # ALERT: Transactions dropped more than 90%
+      - alert: TransactionDropCritical
+        expr: |
+          (
+            (checkout_transactions_current - checkout_transactions_avg_week) 
+            / checkout_transactions_avg_week
+          ) * 100 < -90
+          and checkout_transactions_avg_week > 10
+        for: 5m
+        labels:
+          severity: critical
+          team: monitoring
+          service: checkout
+        annotations:
+          summary: "🚨 CRITICAL: Transactions dropped >90%"
+          description: |
+            Current transactions are more than 90% below the weekly average.
+            Current: {{ printf "%.0f" $value }}%
+            This requires immediate investigation.
+
+  # ===========================================================================
+  # HIGH PRIORITY ALERTS - P2 (Action within 15 minutes)
+  # ===========================================================================
+  - name: checkout_high_alerts
+    interval: 1m
+    rules:
+      # ALERT: Transactions below 50% of expected
+      - alert: TransactionDropHigh
+        expr: |
+          (
+            (checkout_transactions_current - checkout_transactions_avg_week) 
+            / checkout_transactions_avg_week
+          ) * 100 < -50
+          and checkout_transactions_avg_week > 5
+        for: 10m
+        labels:
+          severity: high
+          team: monitoring
+          service: checkout
+        annotations:
+          summary: "⚠️ HIGH: Transactions significantly below average"
+          description: |
+            Transactions are {{ printf "%.1f" $value }}% below the weekly average.
+            This may indicate a partial outage or degradation.
+
+      # ALERT: Consecutive hours with zero transactions
+      - alert: ConsecutiveZeroTransactions
+        expr: |
+          count_over_time(
+            (checkout_transactions_hourly{period="today"} == 0)[3h:1h]
+          ) >= 2
+        for: 0m
+        labels:
+          severity: high
+          team: monitoring
+          service: checkout
+        annotations:
+          summary: "⚠️ HIGH: Multiple hours with zero transactions"
+          description: |
+            Detected 2 or more consecutive hours with zero transactions.
+            This pattern strongly suggests a system outage.
+
+  # ===========================================================================
+  # MEDIUM PRIORITY ALERTS - P3 (Action within 1 hour)
+  # ===========================================================================
+  - name: checkout_medium_alerts
+    interval: 5m
+    rules:
+      # ALERT: Unusual spike in transactions
+      - alert: TransactionSpikeDetected
+        expr: |
+          (
+            (checkout_transactions_current - checkout_transactions_avg_week) 
+            / checkout_transactions_avg_week
+          ) * 100 > 200
+        for: 15m
+        labels:
+          severity: medium
+          team: monitoring
+          service: checkout
+        annotations:
+          summary: "📈 MEDIUM: Unusual transaction spike detected"
+          description: |
+            Transactions are {{ printf "%.1f" $value }}% above the weekly average.
+            This could indicate backlog processing or unusual activity.
+
+      # ALERT: Z-Score anomaly detection
+      - alert: StatisticalAnomalyDetected
+        expr: |
+          abs(
+            (checkout_transactions_current - avg_over_time(checkout_transactions_current[7d]))
+            / stddev_over_time(checkout_transactions_current[7d])
+          ) > 2.5
+        for: 10m
+        labels:
+          severity: medium
+          team: monitoring
+          service: checkout
+        annotations:
+          summary: "📊 MEDIUM: Statistical anomaly detected (Z-Score > 2.5)"
+          description: |
+            Transaction count is more than 2.5 standard deviations from the mean.
+            This is a statistically significant deviation that warrants investigation.
+
+      # ALERT: Daily total below expected
+      - alert: DailyTotalBelowThreshold
+        expr: |
+          sum(checkout_transactions_hourly{period="today"}) 
+          < 
+          sum(checkout_transactions_hourly{period="avg_last_week"}) * 0.7
+        for: 0m
+        labels:
+          severity: medium
+          team: monitoring
+          service: checkout
+        annotations:
+          summary: "📉 MEDIUM: Daily transaction total below 70% of average"
+          description: |
+            The total transactions for today are significantly below the expected daily average.
+            Current total: {{ printf "%.0f" $value }}
+
+  # ===========================================================================
+  # LOW PRIORITY / INFORMATIONAL ALERTS - P4/P5
+  # ===========================================================================
+  - name: checkout_info_alerts
+    interval: 15m
+    rules:
+      # ALERT: Approaching daily target
+      - alert: ApproachingDailyTarget
+        expr: |
+          sum(checkout_transactions_hourly{period="today"}) 
+          > 
+          sum(checkout_transactions_hourly{period="yesterday"}) * 1.1
+        for: 0m
+        labels:
+          severity: info
+          team: monitoring
+          service: checkout
+        annotations:
+          summary: "✅ INFO: Transaction volume above yesterday"
+          description: |
+            Today's transactions are exceeding yesterday's total.
+            Good performance indicator.
+
+      # ALERT: Metrics collection health
+      - alert: MetricsCollectionStale
+        expr: |
+          time() - checkout_last_update_timestamp > 300
+        for: 5m
+        labels:
+          severity: low
+          team: monitoring
+          service: checkout
+        annotations:
+          summary: "⚠️ LOW: Metrics data may be stale"
+          description: |
+            The checkout metrics haven't been updated in over 5 minutes.
+            Check the metrics exporter health.
+
+  # ===========================================================================
+  # RECORDING RULES (Pre-computed metrics for efficiency)
+  # ===========================================================================
+  - name: checkout_recording_rules
+    interval: 1m
+    rules:
+      # Pre-calculate deviation percentage
+      - record: checkout:deviation_from_avg:percentage
+        expr: |
+          (
+            (checkout_transactions_current - checkout_transactions_avg_week) 
+            / checkout_transactions_avg_week
+          ) * 100
+
+      # Pre-calculate Z-Score
+      - record: checkout:zscore:current
+        expr: |
+          (checkout_transactions_current - avg_over_time(checkout_transactions_current[7d]))
+          / stddev_over_time(checkout_transactions_current[7d])
+
+      # Hourly rate
+      - record: checkout:transactions:rate1h
+        expr: |
+          rate(checkout_transactions_total[1h]) * 3600
+
+      # Daily running total
+      - record: checkout:transactions:daily_total
+        expr: |
+          sum(increase(checkout_transactions_total[1d]))

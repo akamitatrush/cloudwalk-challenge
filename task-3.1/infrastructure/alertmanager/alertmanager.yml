@@ -1,0 +1,168 @@
+# =============================================================================
+# CLOUDWALK ALERTMANAGER CONFIGURATION
+# Routing and notification for Prometheus alerts
+# =============================================================================
+
+global:
+  # Slack webhook URL (replace with actual)
+  slack_api_url: 'https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK'
+  
+  # SMTP configuration for email
+  smtp_smarthost: 'smtp.gmail.com:587'
+  smtp_from: 'alertmanager@cloudwalk.io'
+  smtp_auth_username: 'alertmanager@cloudwalk.io'
+  smtp_auth_password: 'your-app-password'
+
+  # PagerDuty
+  pagerduty_url: 'https://events.pagerduty.com/v2/enqueue'
+
+# Templates for notifications
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
+
+# Routing tree
+route:
+  # Default receiver
+  receiver: 'slack-monitoring'
+  
+  # Group alerts by these labels
+  group_by: ['alertname', 'severity', 'service']
+  
+  # Wait before sending first notification
+  group_wait: 30s
+  
+  # Wait before sending updated notification
+  group_interval: 5m
+  
+  # Wait before resending notification
+  repeat_interval: 4h
+
+  # Child routes for specific severities
+  routes:
+    # CRITICAL: PagerDuty + Slack + Email
+    - match:
+        severity: critical
+      receiver: 'pagerduty-critical'
+      group_wait: 10s
+      repeat_interval: 15m
+      continue: true  # Also send to other matching routes
+
+    - match:
+        severity: critical
+      receiver: 'slack-critical'
+      continue: true
+
+    - match:
+        severity: critical
+      receiver: 'email-oncall'
+
+    # HIGH: Slack critical channel
+    - match:
+        severity: high
+      receiver: 'slack-critical'
+      group_wait: 30s
+      repeat_interval: 1h
+
+    # MEDIUM: Slack monitoring channel
+    - match:
+        severity: medium
+      receiver: 'slack-monitoring'
+      group_wait: 1m
+      repeat_interval: 4h
+
+    # LOW/INFO: Slack info channel
+    - match_re:
+        severity: low|info
+      receiver: 'slack-info'
+      group_wait: 5m
+      repeat_interval: 12h
+
+# Inhibition rules (suppress lower severity if higher is firing)
+inhibit_rules:
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'high'
+    equal: ['alertname', 'service']
+
+  - source_match:
+      severity: 'high'
+    target_match:
+      severity: 'medium'
+    equal: ['alertname', 'service']
+
+# Receivers configuration
+receivers:
+  # Slack - Critical incidents channel
+  - name: 'slack-critical'
+    slack_configs:
+      - channel: '#incidents-critical'
+        username: 'AlertManager'
+        icon_emoji: ':rotating_light:'
+        color: '{{ if eq .Status "firing" }}danger{{ else }}good{{ end }}'
+        title: '{{ if eq .Status "firing" }}🚨 ALERT FIRING{{ else }}✅ RESOLVED{{ end }}'
+        text: |
+          {{ range .Alerts }}
+          *Alert:* {{ .Annotations.summary }}
+          *Severity:* {{ .Labels.severity }}
+          *Service:* {{ .Labels.service }}
+          *Description:* {{ .Annotations.description }}
+          {{ if .Annotations.runbook_url }}*Runbook:* {{ .Annotations.runbook_url }}{{ end }}
+          {{ if .Annotations.dashboard_url }}*Dashboard:* {{ .Annotations.dashboard_url }}{{ end }}
+          {{ end }}
+        send_resolved: true
+
+  # Slack - Monitoring channel
+  - name: 'slack-monitoring'
+    slack_configs:
+      - channel: '#monitoring-alerts'
+        username: 'AlertManager'
+        icon_emoji: ':warning:'
+        color: '{{ if eq .Status "firing" }}warning{{ else }}good{{ end }}'
+        title: '{{ if eq .Status "firing" }}⚠️ ALERT{{ else }}✅ RESOLVED{{ end }}'
+        text: |
+          {{ range .Alerts }}
+          *Alert:* {{ .Annotations.summary }}
+          *Severity:* {{ .Labels.severity }}
+          *Description:* {{ .Annotations.description }}
+          {{ end }}
+        send_resolved: true
+
+  # Slack - Info channel
+  - name: 'slack-info'
+    slack_configs:
+      - channel: '#monitoring-info'
+        username: 'AlertManager'
+        icon_emoji: ':information_source:'
+        color: 'good'
+        title: 'ℹ️ {{ .Annotations.summary }}'
+        send_resolved: false
+
+  # PagerDuty - Critical alerts
+  - name: 'pagerduty-critical'
+    pagerduty_configs:
+      - service_key: 'YOUR-PAGERDUTY-SERVICE-KEY'
+        severity: critical
+        description: '{{ .Annotations.summary }}'
+        details:
+          firing: '{{ .Alerts.Firing | len }}'
+          resolved: '{{ .Alerts.Resolved | len }}'
+          service: '{{ .Labels.service }}'
+
+  # Email - On-call team
+  - name: 'email-oncall'
+    email_configs:
+      - to: 'oncall@cloudwalk.io, monitoring-team@cloudwalk.io'
+        subject: '[{{ .Status | toUpper }}] {{ .Annotations.summary }}'
+        html: |
+          <h2>CloudWalk Alert - {{ .Status | toUpper }}</h2>
+          <table>
+            <tr><td><b>Alert:</b></td><td>{{ .Annotations.summary }}</td></tr>
+            <tr><td><b>Severity:</b></td><td>{{ .Labels.severity }}</td></tr>
+            <tr><td><b>Service:</b></td><td>{{ .Labels.service }}</td></tr>
+            <tr><td><b>Description:</b></td><td>{{ .Annotations.description }}</td></tr>
+          </table>
+          {{ if .Annotations.runbook_url }}
+          <p><a href="{{ .Annotations.runbook_url }}">View Runbook</a></p>
+          {{ end }}
+        send_resolved: true

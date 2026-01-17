@@ -1,0 +1,143 @@
+# =============================================================================
+# CLOUDWALK MONITORING STACK
+# Docker Compose for Grafana + Prometheus + Alertmanager
+# =============================================================================
+#
+# Usage:
+#   docker-compose up -d
+#
+# Access:
+#   - Grafana:      http://localhost:3000 (admin/admin)
+#   - Prometheus:   http://localhost:9090
+#   - Alertmanager: http://localhost:9093
+#   - Exporter:     http://localhost:8000/metrics
+#
+# Author: Sérgio
+# =============================================================================
+
+version: '3.8'
+
+services:
+  # ===========================================================================
+  # PROMETHEUS - Metrics collection and alerting
+  # ===========================================================================
+  prometheus:
+    image: prom/prometheus:v2.47.0
+    container_name: cloudwalk-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/checkout_alerts.yml:/etc/prometheus/checkout_alerts.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=15d'
+      - '--web.enable-lifecycle'
+      - '--web.enable-admin-api'
+    networks:
+      - monitoring
+
+  # ===========================================================================
+  # ALERTMANAGER - Alert routing and notifications
+  # ===========================================================================
+  alertmanager:
+    image: prom/alertmanager:v0.26.0
+    container_name: cloudwalk-alertmanager
+    restart: unless-stopped
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager_data:/alertmanager
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+      - '--cluster.advertise-address=0.0.0.0:9093'
+    networks:
+      - monitoring
+
+  # ===========================================================================
+  # GRAFANA - Visualization and dashboards
+  # ===========================================================================
+  grafana:
+    image: grafana/grafana:10.1.0
+    container_name: cloudwalk-grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=http://localhost:3000
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
+    volumes:
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    networks:
+      - monitoring
+
+  # ===========================================================================
+  # CHECKOUT EXPORTER - Custom metrics from CSV
+  # ===========================================================================
+  checkout-exporter:
+    build:
+      context: .
+      dockerfile: Dockerfile.exporter
+    container_name: cloudwalk-checkout-exporter
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/data:ro
+    environment:
+      - CSV_PATH=/data/checkout_2.csv
+      - DATASET_NAME=checkout_2
+      - REFRESH_INTERVAL=60
+    networks:
+      - monitoring
+
+  # ===========================================================================
+  # NODE EXPORTER - System metrics (optional)
+  # ===========================================================================
+  node-exporter:
+    image: prom/node-exporter:v1.6.1
+    container_name: cloudwalk-node-exporter
+    restart: unless-stopped
+    ports:
+      - "9100:9100"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    networks:
+      - monitoring
+
+# ===========================================================================
+# NETWORKS
+# ===========================================================================
+networks:
+  monitoring:
+    driver: bridge
+
+# ===========================================================================
+# VOLUMES
+# ===========================================================================
+volumes:
+  prometheus_data:
+  alertmanager_data:
+  grafana_data:

@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CloudWalk Monitoring Dashboard - Checkout Analysis</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #111217;
+            color: #d8d9da;
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: #181b1f;
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #2c3235;
+        }
+        
+        .header h1 {
+            font-size: 18px;
+            font-weight: 500;
+            color: #fff;
+        }
+        
+        .header-info {
+            display: flex;
+            gap: 24px;
+            font-size: 13px;
+        }
+        
+        .header-info span {
+            color: #8e8e8e;
+        }
+        
+        .status-badge {
+            background: #ff5555;
+            color: #fff;
+            padding: 4px 12px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: 600;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        .dashboard {
+            padding: 16px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: auto auto auto;
+            gap: 8px;
+        }
+        
+        .panel {
+            background: #181b1f;
+            border-radius: 4px;
+            border: 1px solid #2c3235;
+        }
+        
+        .panel-header {
+            padding: 8px 12px;
+            border-bottom: 1px solid #2c3235;
+            font-size: 13px;
+            color: #8e8e8e;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .panel-body {
+            padding: 16px;
+        }
+        
+        /* Stat panels */
+        .stat-panel {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 42px;
+            font-weight: 300;
+            margin: 8px 0;
+        }
+        
+        .stat-value.critical {
+            color: #ff5555;
+        }
+        
+        .stat-value.warning {
+            color: #ffb86c;
+        }
+        
+        .stat-value.success {
+            color: #50fa7b;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #8e8e8e;
+            text-transform: uppercase;
+        }
+        
+        /* Chart panels */
+        .chart-panel {
+            grid-column: span 2;
+        }
+        
+        .wide-panel {
+            grid-column: span 4;
+        }
+        
+        .chart-container {
+            height: 200px;
+            position: relative;
+        }
+        
+        .chart-container.tall {
+            height: 280px;
+        }
+        
+        /* Alert panel */
+        .alert-panel {
+            grid-column: span 2;
+        }
+        
+        .alert-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            border-bottom: 1px solid #2c3235;
+        }
+        
+        .alert-item:last-child {
+            border-bottom: none;
+        }
+        
+        .alert-icon {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        
+        .alert-icon.critical {
+            background: #ff5555;
+            box-shadow: 0 0 8px #ff5555;
+        }
+        
+        .alert-icon.warning {
+            background: #ffb86c;
+        }
+        
+        .alert-icon.ok {
+            background: #50fa7b;
+        }
+        
+        .alert-time {
+            color: #8e8e8e;
+            font-size: 11px;
+            margin-left: auto;
+        }
+        
+        /* Table */
+        .data-table {
+            width: 100%;
+            font-size: 12px;
+        }
+        
+        .data-table th {
+            text-align: left;
+            padding: 8px;
+            color: #8e8e8e;
+            font-weight: 500;
+            border-bottom: 1px solid #2c3235;
+        }
+        
+        .data-table td {
+            padding: 8px;
+            border-bottom: 1px solid #2c3235;
+        }
+        
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .data-table .critical-row {
+            background: rgba(255, 85, 85, 0.1);
+        }
+        
+        .data-table .critical-row td {
+            color: #ff5555;
+        }
+        
+        /* Incident banner */
+        .incident-banner {
+            background: linear-gradient(90deg, #ff5555 0%, #ff79c6 100%);
+            color: #fff;
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .incident-banner strong {
+            font-size: 14px;
+        }
+        
+        .incident-id {
+            background: rgba(0,0,0,0.3);
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="incident-banner">
+        <strong>🚨 ACTIVE INCIDENT</strong>
+        <span class="incident-id">INC-2026-0116-001</span>
+        <span>3-hour outage detected in checkout_2 (15h-17h) | Zero transactions during peak hours</span>
+    </div>
+    
+    <div class="header">
+        <h1>📊 CloudWalk Monitoring - Checkout Analysis</h1>
+        <div class="header-info">
+            <span>Data: checkout_1.csv, checkout_2.csv</span>
+            <span>Last Update: 22:30 BRT</span>
+            <span class="status-badge">ANOMALY DETECTED</span>
+        </div>
+    </div>
+    
+    <div class="dashboard">
+        <!-- Stat Panels Row -->
+        <div class="panel stat-panel">
+            <div class="panel-header">checkout_1 Today</div>
+            <div class="panel-body">
+                <div class="stat-value success">526</div>
+                <div class="stat-label">transactions ✓ Normal</div>
+            </div>
+        </div>
+        
+        <div class="panel stat-panel">
+            <div class="panel-header">checkout_2 Today</div>
+            <div class="panel-body">
+                <div class="stat-value warning">427</div>
+                <div class="stat-label">transactions ↓ -19%</div>
+            </div>
+        </div>
+        
+        <div class="panel stat-panel">
+            <div class="panel-header">Critical Hours</div>
+            <div class="panel-body">
+                <div class="stat-value critical">3</div>
+                <div class="stat-label">15h, 16h, 17h = ZERO</div>
+            </div>
+        </div>
+        
+        <div class="panel stat-panel">
+            <div class="panel-header">Est. Lost Transactions</div>
+            <div class="panel-body">
+                <div class="stat-value critical">~62</div>
+                <div class="stat-label">based on weekly avg</div>
+            </div>
+        </div>
+        
+        <!-- Main Chart -->
+        <div class="panel wide-panel">
+            <div class="panel-header">
+                <span>Hourly Transactions Comparison</span>
+                <span>checkout_2.csv - ANOMALY HIGHLIGHTED</span>
+            </div>
+            <div class="panel-body">
+                <div class="chart-container tall">
+                    <canvas id="mainChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Alerts Panel -->
+        <div class="panel alert-panel">
+            <div class="panel-header">Active Alerts</div>
+            <div class="panel-body" style="padding: 0;">
+                <div class="alert-item">
+                    <div class="alert-icon critical"></div>
+                    <span>ZERO_TX @ 15h - checkout_2</span>
+                    <span class="alert-time">15:00</span>
+                </div>
+                <div class="alert-item">
+                    <div class="alert-icon critical"></div>
+                    <span>ZERO_TX @ 16h - checkout_2</span>
+                    <span class="alert-time">16:00</span>
+                </div>
+                <div class="alert-item">
+                    <div class="alert-icon critical"></div>
+                    <span>ZERO_TX @ 17h - checkout_2</span>
+                    <span class="alert-time">17:00</span>
+                </div>
+                <div class="alert-item">
+                    <div class="alert-icon warning"></div>
+                    <span>HIGH_SPIKE @ 08h (+574%)</span>
+                    <span class="alert-time">08:00</span>
+                </div>
+                <div class="alert-item">
+                    <div class="alert-icon ok"></div>
+                    <span>checkout_1 - All OK</span>
+                    <span class="alert-time">now</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Anomaly Table -->
+        <div class="panel alert-panel">
+            <div class="panel-header">Anomaly Details - checkout_2</div>
+            <div class="panel-body" style="padding: 0; overflow-y: auto; max-height: 240px;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Hour</th>
+                            <th>Today</th>
+                            <th>Avg Week</th>
+                            <th>Deviation</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="critical-row">
+                            <td>15h</td>
+                            <td>0</td>
+                            <td>22.4</td>
+                            <td>-100%</td>
+                            <td>🔴 CRITICAL</td>
+                        </tr>
+                        <tr class="critical-row">
+                            <td>16h</td>
+                            <td>0</td>
+                            <td>21.6</td>
+                            <td>-100%</td>
+                            <td>🔴 CRITICAL</td>
+                        </tr>
+                        <tr class="critical-row">
+                            <td>17h</td>
+                            <td>0</td>
+                            <td>17.7</td>
+                            <td>-100%</td>
+                            <td>🔴 CRITICAL</td>
+                        </tr>
+                        <tr>
+                            <td>08h</td>
+                            <td>25</td>
+                            <td>3.7</td>
+                            <td>+574%</td>
+                            <td>🟡 SPIKE</td>
+                        </tr>
+                        <tr>
+                            <td>09h</td>
+                            <td>36</td>
+                            <td>10.1</td>
+                            <td>+255%</td>
+                            <td>🟡 SPIKE</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Deviation Chart -->
+        <div class="panel chart-panel">
+            <div class="panel-header">
+                <span>Deviation from Weekly Average</span>
+                <span>checkout_2</span>
+            </div>
+            <div class="panel-body">
+                <div class="chart-container">
+                    <canvas id="deviationChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Comparison Chart -->
+        <div class="panel chart-panel">
+            <div class="panel-header">
+                <span>checkout_1 vs checkout_2</span>
+                <span>Today</span>
+            </div>
+            <div class="panel-body">
+                <div class="chart-container">
+                    <canvas id="comparisonChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Data
+        const hours = ['00h','01h','02h','03h','04h','05h','06h','07h','08h','09h','10h','11h','12h','13h','14h','15h','16h','17h','18h','19h','20h','21h','22h','23h'];
+        
+        const checkout2Today = [6,3,3,0,0,2,3,10,25,36,43,44,46,45,19,0,0,0,13,32,23,28,29,17];
+        const checkout2Yesterday = [9,3,1,1,0,1,1,2,0,2,55,36,51,36,32,51,41,45,32,33,25,30,28,11];
+        const checkout2AvgWeek = [5,2,0.42,0.42,0.14,0.71,1.42,3,3.71,10.14,26.14,25,24,20.28,19.57,22.43,21.57,17.71,16.85,18,12.14,14.85,12.71,8.28];
+        
+        const checkout1Today = [9,3,1,1,0,1,1,2,0,2,55,36,51,36,32,51,41,45,32,33,25,30,28,11];
+        
+        // Chart colors (Grafana-style)
+        const colors = {
+            green: 'rgb(80, 250, 123)',
+            greenFill: 'rgba(80, 250, 123, 0.1)',
+            blue: 'rgb(139, 233, 253)',
+            blueFill: 'rgba(139, 233, 253, 0.1)',
+            orange: 'rgb(255, 184, 108)',
+            orangeFill: 'rgba(255, 184, 108, 0.2)',
+            red: 'rgb(255, 85, 85)',
+            redFill: 'rgba(255, 85, 85, 0.3)',
+            purple: 'rgb(189, 147, 249)',
+            gray: 'rgb(142, 142, 142)'
+        };
+        
+        // Main Chart
+        new Chart(document.getElementById('mainChart'), {
+            type: 'line',
+            data: {
+                labels: hours,
+                datasets: [
+                    {
+                        label: 'Today',
+                        data: checkout2Today,
+                        borderColor: colors.green,
+                        backgroundColor: colors.greenFill,
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: 4,
+                        pointBackgroundColor: checkout2Today.map(v => v === 0 ? colors.red : colors.green)
+                    },
+                    {
+                        label: 'Yesterday',
+                        data: checkout2Yesterday,
+                        borderColor: colors.blue,
+                        backgroundColor: 'transparent',
+                        borderDash: [5, 5],
+                        tension: 0.3,
+                        pointRadius: 2
+                    },
+                    {
+                        label: 'Avg Last Week',
+                        data: checkout2AvgWeek,
+                        borderColor: colors.orange,
+                        backgroundColor: 'transparent',
+                        borderDash: [2, 2],
+                        tension: 0.3,
+                        pointRadius: 0
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: { color: '#8e8e8e', usePointStyle: true }
+                    },
+                    annotation: {
+                        annotations: {
+                            box1: {
+                                type: 'box',
+                                xMin: 14.5,
+                                xMax: 17.5,
+                                backgroundColor: 'rgba(255, 85, 85, 0.2)',
+                                borderColor: 'rgba(255, 85, 85, 0.5)'
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { color: '#2c3235' },
+                        ticks: { color: '#8e8e8e' }
+                    },
+                    y: {
+                        grid: { color: '#2c3235' },
+                        ticks: { color: '#8e8e8e' }
+                    }
+                }
+            }
+        });
+        
+        // Deviation Chart
+        const deviation = checkout2Today.map((v, i) => v - checkout2AvgWeek[i]);
+        new Chart(document.getElementById('deviationChart'), {
+            type: 'bar',
+            data: {
+                labels: hours,
+                datasets: [{
+                    data: deviation,
+                    backgroundColor: deviation.map(v => v < -10 ? colors.red : v > 10 ? colors.green : colors.blue),
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: {
+                        grid: { color: '#2c3235' },
+                        ticks: { color: '#8e8e8e', maxRotation: 0 }
+                    },
+                    y: {
+                        grid: { color: '#2c3235' },
+                        ticks: { color: '#8e8e8e' }
+                    }
+                }
+            }
+        });
+        
+        // Comparison Chart
+        new Chart(document.getElementById('comparisonChart'), {
+            type: 'line',
+            data: {
+                labels: hours,
+                datasets: [
+                    {
+                        label: 'checkout_1 (Normal)',
+                        data: checkout1Today,
+                        borderColor: colors.green,
+                        backgroundColor: colors.greenFill,
+                        fill: true,
+                        tension: 0.3
+                    },
+                    {
+                        label: 'checkout_2 (Anomaly)',
+                        data: checkout2Today,
+                        borderColor: colors.red,
+                        backgroundColor: colors.redFill,
+                        fill: true,
+                        tension: 0.3
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: { color: '#8e8e8e', usePointStyle: true }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { color: '#2c3235' },
+                        ticks: { color: '#8e8e8e', maxRotation: 0 }
+                    },
+                    y: {
+                        grid: { color: '#2c3235' },
+                        ticks: { color: '#8e8e8e' }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

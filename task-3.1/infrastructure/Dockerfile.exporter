@@ -1,0 +1,19 @@
+# =============================================================================
+# CLOUDWALK CHECKOUT EXPORTER - Dockerfile
+# =============================================================================
+
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install dependencies
+RUN pip install --no-cache-dir prometheus_client pandas
+
+# Copy exporter script
+COPY checkout_exporter.py .
+
+# Expose metrics port
+EXPOSE 8000
+
+# Run exporter
+CMD ["python", "checkout_exporter.py", "--port", "8000", "--csv-path", "/data/checkout_2.csv"]
