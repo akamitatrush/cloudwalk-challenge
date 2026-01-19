@@ -1,0 +1,113 @@
+# Transaction Guardian - Full Stack
+# CloudWalk Task 3.2
+# 
+# PORTAS:
+# - API: 8001 (Swagger: /docs)
+# - Grafana: 3002 (admin/admin)
+# - Prometheus: 9091
+# - Alertmanager: 9093
+# - Metabase: 3003
+#
+# Uso: docker compose up -d --build
+
+version: '3.8'
+
+services:
+  # ============== API ==============
+  guardian-api:
+    build:
+      context: ..
+      dockerfile: infrastructure/Dockerfile
+    container_name: guardian-api
+    ports:
+      - "8001:8000"
+    environment:
+      - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL:-}
+    volumes:
+      - ../data:/app/data:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - guardian-network
+
+  # ============== PROMETHEUS ==============
+  guardian-prometheus:
+    image: prom/prometheus:v2.47.0
+    container_name: guardian-prometheus
+    ports:
+      - "9091:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.enable-lifecycle'
+    restart: unless-stopped
+    networks:
+      - guardian-network
+
+  # ============== ALERTMANAGER ==============
+  alertmanager:
+    image: prom/alertmanager:v0.26.0
+    container_name: guardian-alertmanager
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+    restart: unless-stopped
+    networks:
+      - guardian-network
+
+  # ============== GRAFANA ==============
+  guardian-grafana:
+    image: grafana/grafana:10.1.0
+    container_name: guardian-grafana
+    ports:
+      - "3002:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ../dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    restart: unless-stopped
+    depends_on:
+      - guardian-prometheus
+    networks:
+      - guardian-network
+
+  # ============== METABASE ==============
+  metabase:
+    image: metabase/metabase:latest
+    container_name: guardian-metabase
+    ports:
+      - "3003:3000"
+    environment:
+      - MB_DB_TYPE=h2
+      - JAVA_TIMEZONE=America/Sao_Paulo
+    volumes:
+      - metabase-data:/metabase-data
+      - ../data:/data:ro
+    restart: unless-stopped
+    networks:
+      - guardian-network
+
+networks:
+  guardian-network:
+    driver: bridge
+
+volumes:
+  grafana-data:
+  prometheus-data:
+  metabase-data:

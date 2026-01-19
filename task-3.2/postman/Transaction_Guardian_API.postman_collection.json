@@ -1,0 +1,411 @@
+{
+  "info": {
+    "_postman_id": "transaction-guardian-api",
+    "name": "🛡️ Transaction Guardian API",
+    "description": "CloudWalk Monitoring Intelligence - Task 3.2\n\nSistema de monitoramento de transações em tempo real com detecção de anomalias usando ML + Rules.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8001",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "📊 Monitoring",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            },
+            "description": "Verifica status do sistema e métricas atuais."
+          },
+          "response": []
+        },
+        {
+          "name": "Estatísticas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/stats",
+              "host": ["{{base_url}}"],
+              "path": ["stats"]
+            },
+            "description": "Estatísticas detalhadas do sistema."
+          },
+          "response": []
+        },
+        {
+          "name": "Métricas Prometheus",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/metrics",
+              "host": ["{{base_url}}"],
+              "path": ["metrics"]
+            },
+            "description": "Métricas em formato Prometheus."
+          },
+          "response": []
+        },
+        {
+          "name": "Métricas JSON",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/metrics/json",
+              "host": ["{{base_url}}"],
+              "path": ["metrics", "json"]
+            },
+            "description": "Métricas em formato JSON."
+          },
+          "response": []
+        },
+        {
+          "name": "Listar Anomalias",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/anomalies?limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["anomalies"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": "Número máximo de anomalias"
+                },
+                {
+                  "key": "level",
+                  "value": "CRITICAL",
+                  "description": "Filtrar por nível (WARNING ou CRITICAL)",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Lista anomalias detectadas."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "💳 Transações Normais",
+      "item": [
+        {
+          "name": "Transação Normal (115 trans)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"approved\",\n  \"count\": 115,\n  \"auth_code\": \"00\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/transaction",
+              "host": ["{{base_url}}"],
+              "path": ["transaction"]
+            },
+            "description": "Transação normal com volume típico (~115 trans/min).\n\nEsperado: is_anomaly = false, alert_level = NORMAL"
+          },
+          "response": []
+        },
+        {
+          "name": "Transação Normal (100 trans)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"approved\",\n  \"count\": 100,\n  \"auth_code\": \"00\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/transaction",
+              "host": ["{{base_url}}"],
+              "path": ["transaction"]
+            },
+            "description": "Transação normal com volume médio."
+          },
+          "response": []
+        },
+        {
+          "name": "Transação Normal (130 trans)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"approved\",\n  \"count\": 130,\n  \"auth_code\": \"00\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/transaction",
+              "host": ["{{base_url}}"],
+              "path": ["transaction"]
+            },
+            "description": "Transação normal com volume um pouco acima da média."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🚨 Anomalias - Volume",
+      "item": [
+        {
+          "name": "⚠️ OUTAGE - Volume Muito Baixo (5)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"approved\",\n  \"count\": 5,\n  \"auth_code\": \"00\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/transaction",
+              "host": ["{{base_url}}"],
+              "path": ["transaction"]
+            },
+            "description": "🚨 SIMULA OUTAGE!\n\nVolume muito baixo (5 trans) indica que o sistema pode ter caído.\n\nEsperado:\n- is_anomaly = true\n- alert_level = CRITICAL\n- violations: LOW_VOLUME, VOLUME_DROP"
+          },
+          "response": []
+        },
+        {
+          "name": "⚠️ DEGRADAÇÃO - Volume Baixo (40)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"approved\",\n  \"count\": 40,\n  \"auth_code\": \"00\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/transaction",
+              "host": ["{{base_url}}"],
+              "path": ["transaction"]
+            },
+            "description": "⚠️ SIMULA DEGRADAÇÃO!\n\nVolume abaixo do threshold (40 < 50).\n\nEsperado:\n- is_anomaly = true\n- alert_level = WARNING ou CRITICAL"
+          },
+          "response": []
+        },
+        {
+          "name": "⚠️ SPIKE - Volume Muito Alto (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"approved\",\n  \"count\": 400,\n  \"auth_code\": \"00\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/transaction",
+              "host": ["{{base_url}}"],
+              "path": ["transaction"]
+            },
+            "description": "⚠️ SIMULA SPIKE!\n\nVolume muito acima do normal (400 vs ~115).\nPode indicar ataque DDoS ou promoção viral.\n\nEsperado:\n- is_anomaly = true\n- alert_level = WARNING\n- violations: VOLUME_SPIKE"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🚨 Anomalias - Status/Auth",
+      "item": [
+        {
+          "name": "⚠️ Transação FAILED",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"failed\",\n  \"count\": 100,\n  \"auth_code\": \"59\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/transaction",
+              "host": ["{{base_url}}"],
+              "path": ["transaction"]
+            },
+            "description": "🚨 TRANSAÇÃO FALHOU!\n\nStatus failed + auth_code 59 (suspeita de fraude).\n\nEsperado:\n- is_anomaly = true\n- alert_level = CRITICAL\n- violations: FAILED, AUTH_ERROR"
+          },
+          "response": []
+        },
+        {
+          "name": "⚠️ Transação DENIED",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"denied\",\n  \"count\": 100,\n  \"auth_code\": \"51\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/transaction",
+              "host": ["{{base_url}}"],
+              "path": ["transaction"]
+            },
+            "description": "⚠️ TRANSAÇÃO NEGADA!\n\nStatus denied + auth_code 51 (saldo insuficiente).\n\nEsperado:\n- is_anomaly = true\n- alert_level = WARNING"
+          },
+          "response": []
+        },
+        {
+          "name": "⚠️ Auth Code Erro (05)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"approved\",\n  \"count\": 100,\n  \"auth_code\": \"05\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/transaction",
+              "host": ["{{base_url}}"],
+              "path": ["transaction"]
+            },
+            "description": "⚠️ CÓDIGO DE ERRO!\n\nauth_code 05 = Não autorizado pelo banco.\n\nEsperado:\n- is_anomaly = true\n- violations: AUTH_ERROR"
+          },
+          "response": []
+        },
+        {
+          "name": "⚠️ Transação REVERSED",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"reversed\",\n  \"count\": 100,\n  \"auth_code\": \"00\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/transaction",
+              "host": ["{{base_url}}"],
+              "path": ["transaction"]
+            },
+            "description": "⚠️ TRANSAÇÃO REVERTIDA!\n\nPode indicar chargeback ou fraude."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "📦 Batch",
+      "item": [
+        {
+          "name": "Batch - Múltiplas Transações",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transactions\": [\n    {\"status\": \"approved\", \"count\": 110, \"auth_code\": \"00\"},\n    {\"status\": \"approved\", \"count\": 115, \"auth_code\": \"00\"},\n    {\"status\": \"approved\", \"count\": 120, \"auth_code\": \"00\"},\n    {\"status\": \"denied\", \"count\": 5, \"auth_code\": \"51\"},\n    {\"status\": \"approved\", \"count\": 108, \"auth_code\": \"00\"},\n    {\"status\": \"failed\", \"count\": 95, \"auth_code\": \"59\"},\n    {\"status\": \"approved\", \"count\": 112, \"auth_code\": \"00\"},\n    {\"status\": \"approved\", \"count\": 10, \"auth_code\": \"00\"},\n    {\"status\": \"approved\", \"count\": 118, \"auth_code\": \"00\"},\n    {\"status\": \"approved\", \"count\": 105, \"auth_code\": \"00\"}\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/transactions/batch",
+              "host": ["{{base_url}}"],
+              "path": ["transactions", "batch"]
+            },
+            "description": "Envia múltiplas transações de uma vez.\n\nÚtil para replay de dados históricos.\n\nEste batch inclui:\n- 7 transações normais\n- 1 denied (saldo insuficiente)\n- 1 failed (fraude)\n- 1 outage (volume baixo)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🔧 Admin",
+      "item": [
+        {
+          "name": "Reset Sistema",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/reset",
+              "host": ["{{base_url}}"],
+              "path": ["reset"]
+            },
+            "description": "⚠️ CUIDADO!\n\nReseta todos os contadores e histórico.\nÚtil para reiniciar testes do zero."
+          },
+          "response": []
+        },
+        {
+          "name": "Info da API",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/",
+              "host": ["{{base_url}}"],
+              "path": [""]
+            },
+            "description": "Informações básicas da API."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

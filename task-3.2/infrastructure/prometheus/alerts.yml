@@ -1,0 +1,52 @@
+groups:
+  - name: transaction_guardian_alerts
+    rules:
+      # ALERTA: Zero transações
+      - alert: ZeroTransactions
+        expr: transaction_guardian_current_count == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "🚨 CRITICAL: Zero transações detectado!"
+          description: "Nenhuma transação nos últimos minutos. Possível outage."
+
+      # ALERTA: Volume muito baixo
+      - alert: LowVolume
+        expr: transaction_guardian_current_count < 50
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "⚠️ WARNING: Volume baixo"
+          description: "Volume atual: {{ $value }} (abaixo de 50)"
+
+      # ALERTA: Alta taxa de anomalias
+      - alert: HighAnomalyRate
+        expr: (transaction_guardian_anomalies / transaction_guardian_total) > 0.1
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "⚠️ WARNING: Alta taxa de anomalias"
+          description: "Mais de 10% das transações são anomalias"
+
+      # ALERTA: Taxa de aprovação baixa
+      - alert: LowApprovalRate
+        expr: transaction_guardian_approval_rate < 0.9
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "🚨 CRITICAL: Taxa de aprovação baixa"
+          description: "Taxa de aprovação: {{ $value | humanizePercentage }}"
+
+      # ALERTA: Spike de volume
+      - alert: VolumeSpike
+        expr: transaction_guardian_current_count > (transaction_guardian_avg_count * 2)
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "⚠️ WARNING: Spike de volume"
+          description: "Volume atual muito acima da média"
