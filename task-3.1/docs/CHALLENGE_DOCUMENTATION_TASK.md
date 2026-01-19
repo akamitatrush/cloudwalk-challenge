@@ -2,7 +2,7 @@
 ## Documentação Completa do Desafio
 
 **CloudWalk Challenge - Task 3.1**  
-**Candidato:** Sérgio  
+**Candidato:** Sérgio Henrique
 **Vaga:** Monitoring Intelligence Analyst (Night Shift)  
 **Data:** Janeiro 2025
 
@@ -514,8 +514,10 @@ O desafio **Task 3.1** foi completado com **todos os requisitos atendidos**:
 
 ---
 
-**Sérgio**  
+**Sérgio Henrique**  
 Candidato: Monitoring Intelligence Analyst (Night Shift)  
 CloudWalk Challenge - Janeiro 2025
 
 *"Bombeiros que usam código para apagar incêndios."* 🔥
+
+*"Se você quiser descobrir os segredos do Universo, pense em termos de energia, frequência e vibração.- Nikola Tesla"*
