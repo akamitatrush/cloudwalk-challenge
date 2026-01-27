@@ -2,28 +2,23 @@
 
 > Evolução do desafio CloudWalk de PoC para sistema de produção enterprise-grade.
 
----
-
 ## 📋 Visão Geral
 
-Este roadmap documenta as melhorias planejadas para evoluir o Transaction Guardian de uma Prova de Conceito para um sistema **resiliente, escalável e seguro**.
-
----
+Este roadmap documenta as melhorias planejadas para evoluir o Transaction Guardian de uma Prova de Conceito para um sistema resiliente, escalável e seguro.
 
 ## 🎯 Fases de Implementação
 
 | Fase | Descrição | Status |
 |------|-----------|--------|
-| **1. Foundation** | TimescaleDB, Redis, Logs JSON | 📋 Planejado |
-| **2. Performance** | Kafka, Workers Async, Circuit Breaker | 📋 Planejado |
-| **3. Security** | OAuth2, Vault, Rate Limiting | 📋 Planejado |
-| **4. MLOps** | MLflow, Airflow, Feature Store | 📋 Planejado |
-| **5. Clawdbot 🦞** | Assistente AI para Night Shift | 📋 Planejado |
-| **6. Observability** | OpenTelemetry, Jaeger, SLOs | 📋 Planejado |
-
----
+| 1. Foundation | TimescaleDB, Redis, Logs JSON | 📋 Planejado |
+| 2. Performance | Kafka, Workers Async, Circuit Breaker | 📋 Planejado |
+| 3. Security | OAuth2, Vault, Rate Limiting | 📋 Planejado |
+| 4. MLOps | MLflow, Airflow, Feature Store | 📋 Planejado |
+| 5. Clawdbot 🦞 | Assistente AI para Night Shift | 📋 Planejado |
+| 6. Observability | OpenTelemetry, Jaeger, SLOs | 📋 Planejado |
 
 ## 🏗️ Arquitetura Proposta
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                    TRANSACTION GUARDIAN v2.0                 │
@@ -47,8 +42,6 @@ Este roadmap documenta as melhorias planejadas para evoluir o Transaction Guardi
 └─────────────────────────────────────────────────────────────┘
 ```
 
----
-
 ## 📊 Comparativo v1.0 vs v2.0
 
 | Aspecto | v1.0 (Atual) | v2.0 (Proposta) |
@@ -61,11 +54,10 @@ Este roadmap documenta as melhorias planejadas para evoluir o Transaction Guardi
 | ML Pipeline | Estático | MLflow + Airflow |
 | Alertas Mobile | Nenhum | Clawdbot 🦞 |
 
----
-
 ## 🦞 Destaque: Clawdbot Integration
 
-Para **Night Shift**, o Clawdbot transforma seu celular em painel de controle:
+Para Night Shift, o Clawdbot transforma seu celular em painel de controle:
+
 ```
 Você (03:00 WhatsApp): "status"
 
@@ -78,19 +70,19 @@ Clawdbot: "✅ Transaction Guardian
 Tudo normal! 🦞"
 ```
 
----
+## 📄 Documentação Completa
 
-## 📄 Documento Completo
-
-👉 **[PLAN_VERSION_2.0.md](./PLAN_VERSION_2.0.md)** - Roadmap técnico detalhado com código de exemplo
-
----
+| Documento | Descrição |
+|-----------|-----------|
+| 👉 [PLAN_VERSION_2.0.md](./PLAN_VERSION_2.0.md) | Roadmap técnico detalhado com especificações |
+| 🦞 [CLAWDBOT_SECTION.md](./CLAWDBOT_SECTION.md) | Guia completo de integração do Clawdbot com código de exemplo |
 
 ## 💡 Por que este Roadmap?
 
 > *"The challenge is complete, but the learning continues."*
 
 Este documento demonstra:
+
 - ✅ Visão de arquitetura enterprise
 - ✅ Entendimento de necessidades práticas (Night Shift)
 - ✅ Mentalidade de melhoria contínua
