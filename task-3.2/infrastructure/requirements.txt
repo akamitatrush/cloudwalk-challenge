@@ -1,5 +1,5 @@
 # Transaction Guardian - Dependencies
-# Phase 1 + Phase 2
+# Phase 1 + Phase 2 + Phase 3
 
 # API Framework
 fastapi==0.104.1
@@ -16,6 +16,10 @@ psycopg2-binary==2.9.9
 
 # Redis Cache (Phase 2)
 redis==5.0.1
+
+# Authentication (Phase 3)
+PyJWT==2.8.0
+python-jose[cryptography]==3.3.0
 
 # HTTP & Utils
 httpx==0.25.2

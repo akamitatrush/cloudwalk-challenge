@@ -27,6 +27,8 @@ import os
 from .anomaly_detector import AnomalyDetector
 from .alert_manager import AlertManager
 from .cache import get_cache, RedisCache
+from .auth_routes import router as auth_router
+from .auth import get_optional_user
 
 # ============== FASTAPI APP ==============
 
@@ -60,6 +62,9 @@ Sistema de monitoramento de transações em tempo real com detecção de anomali
     redoc_url="/redoc"
 )
 
+# Include auth routes (Phase 3)
+app.include_router(auth_router)
+
 # CORS
 app.add_middleware(
     CORSMiddleware,
@@ -67,7 +72,11 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+
 )
+
+# Include auth routes (Phase 3)
+app.include_router(auth_router)
 
 # ============== GLOBAL STATE ==============
 
