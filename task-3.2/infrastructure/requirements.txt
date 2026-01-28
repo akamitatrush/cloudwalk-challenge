@@ -19,6 +19,7 @@ redis==5.0.1
 
 # HTTP & Utils
 httpx==0.25.2
+aiohttp==3.9.1
 python-multipart==0.0.6
 
 # Notifications
