@@ -1,0 +1,14 @@
+# Transaction Guardian v2.0 - Phase 1: Foundation
+# Requirements for TimescaleDB integration
+
+# Database
+asyncpg==0.29.0          # Async PostgreSQL driver
+psycopg2-binary==2.9.9   # Sync PostgreSQL driver (for scripts)
+
+# Existing dependencies (ensure compatibility)
+fastapi>=0.104.0
+uvicorn>=0.24.0
+pydantic>=2.5.0
+
+# Utilities
+python-dotenv==1.0.0     # Environment variables
