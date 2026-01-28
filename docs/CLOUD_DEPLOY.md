@@ -21,7 +21,7 @@
 
 **Transaction Guardian - Complete Dashboard:**
 
-http://34.39.251.57:3002/d/dd143bad-ef42-4e2e-bdff-68fad25c9c92/transaction-guardian---complete
+🔗 http://34.39.251.57:3002/d/dd143bad-ef42-4e2e-bdff-68fad25c9c92/transaction-guardian---complete
 
 Este dashboard mostra:
 - 📊 Total de Transações (42,920+)
@@ -99,13 +99,15 @@ Este dashboard mostra:
 ---
 
 ## 📡 API - Exemplo de Resposta
+
+**Request:**
 ```bash
 curl -X POST http://34.39.251.57:8001/transaction \
   -H "Content-Type: application/json" \
   -d '{"timestamp": "2026-01-28T10:00:00", "status": "failed", "count": 1, "auth_code": "00"}'
 ```
 
-**Resposta:**
+**Response:**
 ```json
 {
   "is_anomaly": true,
@@ -126,27 +128,36 @@ curl -X POST http://34.39.251.57:8001/transaction \
 | Script | Descrição | Uso |
 |--------|-----------|-----|
 | `generate_realtime_data.py` | Gera dados no TimescaleDB | `python3 generate_realtime_data.py 10000 24` |
-| `generate_api_traffic.py` | Gera tráfego na API | `python3 generate_api_traffic.py` |
+| `generate_api_traffic.py` | Gera tráfego na API (Prometheus) | `python3 generate_api_traffic.py` |
 | `create_dashboard.py` | Cria dashboards no Grafana | `python3 create_dashboard.py` |
 
 ---
 
-## 💰 Custos
+## 🚀 Como Reproduzir Localmente
+```bash
+# Clone o repositório
+git clone https://github.com/akamitatrush/cloudwalk-challenge.git
+cd cloudwalk-challenge/task-3.2/infrastructure
 
-| Item | Valor |
-|------|-------|
-| Crédito Google Cloud | $300 (90 dias) |
-| Custo mensal estimado | ~$46 |
-| Duração estimada | ~6-7 meses grátis |
+# Suba os containers
+docker compose up -d
+
+# Acesse
+# API: http://localhost:8001/docs
+# Grafana: http://localhost:3002
+```
 
 ---
 
 ## 👤 Autor
 
 **Sérgio Henrique**
-- 📧 Email: sergio@lognullsec.com
-- 💼 LinkedIn: [linkedin.com/in/sergiohenrique](https://linkedin.com/in/sergiohenrique)
-- 🐙 GitHub: [@akamitatrush](https://github.com/akamitatrush)
+
+| | |
+|---|---|
+| 📧 Email | sergio@lognullsec.com |
+| 💼 LinkedIn | [linkedin.com/in/akasergiosilva](https://linkedin.com/in/akasergiosilva) |
+| 🐙 Repositório | [github.com/akamitatrush/cloudwalk-challenge](https://github.com/akamitatrush/cloudwalk-challenge) |
 
 **Candidatura:** Monitoring Intelligence Analyst (Night Shift) - CloudWalk
 
