@@ -52,12 +52,17 @@ Sistema de monitoramento de transações em tempo real com detecção de anomali
 - **Rate Limiting** - Proteção contra abuso (100 req/min)
 - **Cache Stats** - Métricas de cache (GET /cache/stats)
 
+### 🔐 Phase 3 Features:
+- **JWT Authentication** - Login com token (POST /auth/login)
+- **API Key** - Autenticação por chave (X-API-Key header)
+- **Role-based Access** - Controle por permissões (admin, operator, viewer)
+
 ### 🔍 Métodos de Detecção:
 - **Machine Learning**: Isolation Forest
 - **Rule-based**: Thresholds configuráveis
 - **Statistical**: Z-Score analysis
     """,
-    version="2.0.0",
+    version="2.1.0",
     docs_url="/docs",
     redoc_url="/redoc"
 )
