@@ -29,6 +29,8 @@ from .alert_manager import AlertManager
 from .cache import get_cache, RedisCache
 from .auth_routes import router as auth_router
 from .mlops_routes import router as mlops_router
+from .telegram_bot import send_anomaly_alert, get_bot
+from .telegram_routes import router as telegram_router
 from .auth import get_optional_user
 
 # ============== FASTAPI APP ==============
@@ -71,6 +73,7 @@ Sistema de monitoramento de transações em tempo real com detecção de anomali
 # Include auth routes (Phase 3)
 app.include_router(auth_router)
 app.include_router(mlops_router)
+app.include_router(telegram_router)
 
 # CORS
 app.add_middleware(
@@ -254,6 +257,9 @@ async def analyze_transaction(tx: TransactionInput, background_tasks: Background
         if len(state.recent_anomalies) > 100:
             state.recent_anomalies = state.recent_anomalies[-50:]
         background_tasks.add_task(broadcast_event, "anomaly", anomaly_record)
+        # Enviar alerta Telegram para CRITICAL e WARNING
+        if result["alert_level"] in ["CRITICAL", "WARNING"]:
+            background_tasks.add_task(send_anomaly_alert, result["alert_level"], result["anomaly_score"], {"current_count": tx.count, "running_mean": result["metrics"].get("running_mean", 100), "rule_violations": result["rule_violations"]})
     
     response_data = {
         "is_anomaly": result["is_anomaly"],
