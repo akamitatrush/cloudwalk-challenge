@@ -28,3 +28,6 @@ python-multipart==0.0.6
 
 # Notifications
 slack-sdk==3.23.0
+
+# MLOps (Phase 4)
+mlflow==2.9.2
