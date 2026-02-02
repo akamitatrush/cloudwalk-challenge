@@ -1,143 +1,240 @@
 # 🚀 CloudWalk Monitoring Analyst Challenge
 
-<!-- Badges -->
-<p align="center">
-  <img src="https://img.shields.io/badge/Python-3.11-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python">
-  <img src="https://img.shields.io/badge/FastAPI-0.104-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI">
-  <img src="https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker">
-  <img src="https://img.shields.io/badge/Grafana-Dashboards-F46800?style=for-the-badge&logo=grafana&logoColor=white" alt="Grafana">
-  <img src="https://img.shields.io/badge/Prometheus-Metrics-E6522C?style=for-the-badge&logo=prometheus&logoColor=white" alt="Prometheus">
-</p>
+> **Sistema Enterprise de Monitoramento de Transações em Tempo Real**
+>
+> Desafio técnico para a posição de **Monitoring Intelligence Analyst (Night Shift)**
 
-<p align="center">
-  <img src="https://img.shields.io/badge/ML-Isolation_Forest-FF6F00?style=for-the-badge&logo=scikit-learn&logoColor=white" alt="ML">
-  <img src="https://img.shields.io/badge/Task_3.1-Complete-success?style=for-the-badge" alt="Task 3.1">
-  <img src="https://img.shields.io/badge/Task_3.2-Complete-success?style=for-the-badge" alt="Task 3.2">
-</p>
-
-<p align="center">
-  <img src="https://img.shields.io/github/last-commit/akamitatrush/cloudwalk-challenge?style=flat-square" alt="Last Commit">
-  <img src="https://img.shields.io/github/repo-size/akamitatrush/cloudwalk-challenge?style=flat-square" alt="Repo Size">
-</p>
+[![Python](https://img.shields.io/badge/Python-3.11-blue?logo=python)](https://python.org)
+[![Ruby](https://img.shields.io/badge/Ruby-3.0-red?logo=ruby)](https://ruby-lang.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.104-green?logo=fastapi)](https://fastapi.tiangolo.com)
+[![Docker](https://img.shields.io/badge/Docker-Ready-blue?logo=docker)](https://docker.com)
+[![Redis](https://img.shields.io/badge/Redis-Cache-red?logo=redis)](https://redis.io)
+[![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
 
 ---
 
-**Candidato:** Sérgio  
-**Vaga:** Monitoring Intelligence Analyst (Night Shift)
+## 📋 Índice
 
-> *"We want firefighters that use code to stop the fire."* - CloudWalk
-
----
-
-## 📋 Estrutura do Desafio
-
-| Task | Descrição | Status |
-|------|-----------|--------|
-| 3.1 | Anomaly Detection Analysis | ✅ Completo |
-| 3.2 | Real-Time Alert System | ✅ Completo |
+- [Sobre o Projeto](#-sobre-o-projeto)
+- [Versões e Entregas](#-versões-e-entregas)
+- [Live Demo](#-live-demo)
+- [Features](#-features)
+- [Arquitetura](#-arquitetura)
+- [Quick Start](#-quick-start)
+- [Documentação](#-documentação)
 
 ---
 
-## 🎯 Task 3.1 - Anomaly Detection
+## 🎯 Sobre o Projeto
 
-### Descoberta Principal
-- **Anomalia:** 3 horas consecutivas (15h-17h) com ZERO transações
-- **Impacto:** ~62 transações perdidas
-- **Causa provável:** Outage do sistema de pagamento
+O **Transaction Guardian** é um sistema completo de monitoramento que detecta anomalias em transações financeiras em tempo real, prevê incidentes antes que aconteçam, e alerta operadores automaticamente.
 
-### Ferramentas Utilizadas
-- Grafana + Prometheus + Alertmanager
-- Metabase + SQL
-- Python + Docker
+### Mentalidade "Firefighter"
 
-📂 [Ver documentação completa](./task-3.1/README.md)
+> *"Não apagamos incêndios - prevenimos que comecem."*
+
+O sistema foi desenvolvido com a mentalidade de bombeiro: detectar sinais de fumaça (anomalias) antes que virem incêndios (outages).
 
 ---
 
-## 🛡️ Task 3.2 - Transaction Guardian
+## 📦 Versões e Entregas
 
-### Sistema Desenvolvido
-**Transaction Guardian** - Sistema de monitoramento em tempo real com:
-- **API FastAPI** para receber transações
-- **3 métodos de detecção:** ML (Isolation Forest) + Z-Score + Rules
-- **5 Dashboards Grafana** com 31 painéis
-- **Alertas automáticos** via Prometheus + Alertmanager
+| Tag | Data | Descrição | Status |
+|-----|------|-----------|--------|
+| `v2.0.0` | 28 Jan 2026 | **✅ Entrega Oficial Task 3.2** | Avaliação |
+| `main` | 02 Fev 2026 | Entrega + Evoluções Adicionais | Atual |
 
-### Requisitos Atendidos
-| Requisito | Status |
-|-----------|--------|
-| Endpoint que recebe transações | ✅ |
-| Query para organizar dados | ✅ |
-| Gráfico em tempo real | ✅ |
-| Modelo para anomalias (ML) | ✅ |
-| Sistema de notificação | ✅ |
-| Alertar FAILED/DENIED/REVERSED | ✅ |
-
-### Quick Start
+### 🔍 Para avaliar a entrega oficial:
 ```bash
-cd task-3.2/infrastructure
-docker compose up -d --build
-
-# Acessar:
-# API Swagger: http://localhost:8001/docs
-# Grafana: http://localhost:3002 (admin/admin)
+git checkout v2.0.0
 ```
 
-📂 [Ver documentação completa](./task-3.2/README.md)
+### 🚀 Para ver todas as evoluções:
+```bash
+git checkout main
+```
 
 ---
 
-## 🚀 Roadmap v2.0
+## 🌐 Live Demo
 
-Plano de evolução para produção enterprise:
+| Serviço | URL | Descrição |
+|---------|-----|-----------|
+| 📚 **API Docs** | http://34.39.251.57:8001/docs | Swagger/OpenAPI |
+| 🛡️ **Shugo Dashboard** | http://34.39.251.57:8001/shugo/dashboard | Predição de Anomalias |
+| 📊 **Grafana** | http://34.39.251.57:3002 | Dashboards |
+| 📈 **Prometheus** | http://34.39.251.57:9091 | Métricas |
+| 🧪 **MLflow** | http://34.39.251.57:5000 | ML Platform |
+| 📱 **Telegram Bot** | @omega_transaction_bot | Alertas |
 
-| Fase | Descrição | Status |
-|------|-----------|--------|
-| 1. Foundation | TimescaleDB, Redis, CI/CD | 📋 Planejado |
-| 2. Performance | Kafka, Workers Async | 📋 Planejado |
-| 3. Security | OAuth2, Vault | 📋 Planejado |
-| 4. MLOps | MLflow, Airflow | 📋 Planejado |
-| 5. Clawdbot 🦞 | AI Assistant para Night Shift | 📋 Planejado |
-| 6. Observability | OpenTelemetry, Jaeger | 📋 Planejado |
-
-📂 [Ver roadmap completo](./docs/roadmap/)
+> ⚠️ Credenciais disponíveis sob demanda para avaliadores
 
 ---
 
-## 📊 Números do Projeto
+## ✨ Features
 
-| Métrica | Valor |
-|---------|-------|
-| Dashboards Grafana | 5 |
-| Painéis de monitoramento | 31 |
-| Endpoints API | 9 |
-| Documentos técnicos | 8+ |
-| Linhas de código Python | ~1.500 |
-| Tempo de detecção | < 30s |
+### 📦 Entrega Original (v2.0.0)
 
----
+| Feature | Descrição |
+|---------|-----------|
+| 🔍 Detecção de Anomalias | ML (Isolation Forest) + Estatística (Z-Score) + Regras |
+| 📊 Grafana Dashboards | Visualização em tempo real |
+| 📈 Prometheus Metrics | Métricas customizadas |
+| 🚨 Alertmanager | Gestão de alertas |
+| 🐳 Docker Compose | Deploy containerizado |
 
-## 🔗 Links Úteis
+### 🚀 Evoluções Adicionais
 
-| Recurso | Link |
-|---------|------|
-| 📦 Release v1.0.0 | [Challenge Complete](https://github.com/akamitatrush/cloudwalk-challenge/releases/tag/1.0.0) |
-| 📦 Release v2.0.0 | [Enterprise Roadmap](https://github.com/akamitatrush/cloudwalk-challenge/releases/tag/v2.0.0) |
-| 🦞 Clawdbot | [github.com/clawdbot/clawdbot](https://github.com/clawdbot/clawdbot) |
-
----
-
-## 💡 Filosofia
-
-> *"Não entreguei só código - entreguei uma solução completa com documentação, dashboards e runbooks."*
-
-Este projeto demonstra:
-- ✅ Capacidade de análise de dados de transações
-- ✅ Construção de sistemas de monitoramento completos
-- ✅ Documentação profissional
-- ✅ Visão de arquitetura enterprise
-- ✅ Mentalidade de firefighter: prevenção > reação
+| Phase | Feature | Tecnologia |
+|-------|---------|------------|
+| **2** | ⚡ Redis Cache | Cache < 10ms, Rate Limiting |
+| **3** | 🔐 Autenticação | JWT + API Keys + RBAC |
+| **4** | 🧪 MLOps | MLflow model versioning |
+| **5** | 📱 Telegram Bot | Alertas em tempo real |
+| **6** | 🤖 AI Summary | Relatórios automáticos |
+| **7** | 🛡️ Shugo 守護 | **Prediction Engine** |
+| **8** | 💎 Ruby SDK | CLI + Client Library |
 
 ---
 
-**CloudWalk Challenge** - Janeiro 2025
+## 🛡️ Shugo 守護 - Prediction Engine
+
+> *"Vê o futuro, protege o presente"*
+
+O **Shugo** (守護 = Guardião em japonês) é o diferencial do projeto: um engine de predição que **antecipa anomalias antes que aconteçam**.
+
+### Como funciona:
+```
+📊 Aprende padrões → 🔮 Prevê volume → ⚠️ Alerta antes
+```
+
+### Dashboard:
+
+![Shugo Dashboard](task-3.2/code/static/shugo_preview.png)
+
+Acesse: http://34.39.251.57:8001/shugo/dashboard
+
+---
+
+## 💎 Ruby SDK & CLI
+
+Demonstrando conhecimento em **Ruby** (stack CloudWalk):
+```ruby
+# Como biblioteca
+require 'guardian'
+
+client = Guardian::Client.new(api_url: "http://34.39.251.57:8001")
+client.send_transaction(status: "approved", count: 150)
+client.shugo.predict(minutes: 30)
+```
+```bash
+# Como CLI
+$ guardian status
+$ guardian transaction approved 150
+$ guardian shugo forecast 6
+$ guardian anomalies --limit 10
+```
+
+---
+
+## 🏗️ Arquitetura
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    TRANSACTION GUARDIAN                      │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│   ┌─────────┐    ┌─────────────┐    ┌─────────────┐        │
+│   │  Ruby   │───▶│   FastAPI   │───▶│   Shugo     │        │
+│   │   CLI   │    │   (Python)  │    │  Prediction │        │
+│   └─────────┘    └──────┬──────┘    └─────────────┘        │
+│                         │                                    │
+│         ┌───────────────┼───────────────┐                   │
+│         ▼               ▼               ▼                   │
+│   ┌─────────┐    ┌─────────────┐  ┌─────────────┐          │
+│   │  Redis  │    │ TimescaleDB │  │   MLflow    │          │
+│   │  Cache  │    │  (Postgres) │  │   (MLOps)   │          │
+│   └─────────┘    └─────────────┘  └─────────────┘          │
+│                         │                                    │
+│         ┌───────────────┼───────────────┐                   │
+│         ▼               ▼               ▼                   │
+│   ┌─────────┐    ┌─────────────┐  ┌─────────────┐          │
+│   │Prometheus│   │   Grafana   │  │  Telegram   │          │
+│   │(Metrics)│    │ (Dashboards)│  │    Bot      │          │
+│   └─────────┘    └─────────────┘  └─────────────┘          │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 🚀 Quick Start
+
+### Pré-requisitos
+
+- Docker 20.10+
+- Docker Compose 2.0+
+
+### Instalação
+```bash
+# Clone
+git clone https://github.com/akamitatrush/cloudwalk-challenge.git
+cd cloudwalk-challenge/task-3.2/infrastructure
+
+# Iniciar
+docker compose up -d --build
+
+# Verificar
+curl http://localhost:8001/health
+```
+
+### Ruby CLI
+```bash
+cd task-3.2/ruby-sdk
+gem install httparty thor terminal-table colorize
+./bin/guardian status --url http://localhost:8001
+```
+
+---
+
+## 📚 Documentação
+
+| Documento | Descrição |
+|-----------|-----------|
+| [DOCUMENTATION.md](task-3.2/docs/DOCUMENTATION.md) | Documentação técnica completa |
+| [FAQ_DETAILED.md](task-3.2/docs/FAQ_DETAILED.md) | Perguntas frequentes e decisões técnicas |
+| [RUNBOOK.md](task-3.2/docs/RUNBOOK.md) | Guia operacional |
+| [Ruby SDK README](task-3.2/ruby-sdk/README.md) | Documentação do SDK Ruby |
+
+---
+
+## 📊 Tecnologias
+
+| Categoria | Tecnologias |
+|-----------|-------------|
+| **Backend** | Python 3.11, FastAPI, SQLAlchemy |
+| **Frontend** | React, Tailwind CSS, Chart.js |
+| **Database** | TimescaleDB (PostgreSQL), Redis |
+| **ML/AI** | Scikit-learn, MLflow |
+| **Monitoring** | Prometheus, Grafana, Alertmanager |
+| **DevOps** | Docker, Docker Compose |
+| **SDK** | Ruby 3.0, Thor, HTTParty |
+
+---
+
+## 👤 Autor
+
+**Sérgio Henrique**
+
+- 💼 [LinkedIn](https://linkedin.com/in/akasergiosilva)
+- 🐙 [GitHub](https://github.com/akamitatrush)
+- 📧 sergio@lognullsec.com
+
+---
+
+## 📄 Licença
+
+MIT License - CloudWalk Challenge 2026
+
+---
+
+*Desenvolvido com 🔥 e mentalidade de bombeiro*
