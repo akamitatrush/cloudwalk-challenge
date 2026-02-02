@@ -1,4 +1,23 @@
 nohup: ignoring input
-🚀 Injeção de 500K transações
-⏱️  Estimativa: ~2-3 horas
-
+🚀 Injeção rápida de transações
+📊 100 transações
+📊 200 transações
+📊 300 transações
+📊 400 transações
+📊 500 transações
+📊 600 transações
+📊 700 transações
+📊 800 transações
+📊 900 transações
+📊 1000 transações
+📊 1100 transações
+📊 1200 transações
+📊 1300 transações
+📊 1400 transações
+📊 1500 transações
+📊 1600 transações
+📊 1700 transações
+📊 1800 transações
+📊 1900 transações
+📊 2000 transações
+📊 2100 transações
