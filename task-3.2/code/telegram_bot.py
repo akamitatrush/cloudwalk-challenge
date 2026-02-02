@@ -17,7 +17,7 @@ from datetime import datetime
 from typing import Optional, Dict, List
 
 # Telegram Config
-TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN", "8251787224:AAHUvYIRwC3yw8GkeC16JXKjKppFgixpz1w")
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN", "")
 TELEGRAM_API = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}"
 
 # 🔒 Security Config

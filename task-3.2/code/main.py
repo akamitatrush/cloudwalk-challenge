@@ -31,6 +31,7 @@ from .auth_routes import router as auth_router
 from .mlops_routes import router as mlops_router
 from .telegram_bot import send_anomaly_alert, get_bot
 from .telegram_routes import router as telegram_router
+from .ai_summary_routes import router as ai_router
 from .auth import get_optional_user
 
 # ============== FASTAPI APP ==============
@@ -74,6 +75,7 @@ Sistema de monitoramento de transações em tempo real com detecção de anomali
 app.include_router(auth_router)
 app.include_router(mlops_router)
 app.include_router(telegram_router)
+app.include_router(ai_router)
 
 # CORS
 app.add_middleware(

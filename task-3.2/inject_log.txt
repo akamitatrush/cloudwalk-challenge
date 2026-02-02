@@ -1,0 +1,5 @@
+nohup: ignoring input
+🚀 Injeção de 500K transações
+⏱️  Estimativa: ~2-3 horas
+
+📊 5000 / 500000 (1 tx/s) - ETA: 247500s
