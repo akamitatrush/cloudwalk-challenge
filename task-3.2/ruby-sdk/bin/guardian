@@ -1,0 +1,184 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "thor"
+require "terminal-table"
+require "colorize"
+require_relative "../lib/guardian"
+
+module Guardian
+  class CLI < Thor
+    class_option :url, type: :string, default: "http://localhost:8001", desc: "API URL"
+    class_option :key, type: :string, desc: "API Key"
+
+    desc "status", "Show system status"
+    def status
+      client = build_client
+      health = client.health
+      stats = client.stats
+
+      puts "\n🛡️  TRANSACTION GUARDIAN".colorize(:cyan).bold
+      puts "=" * 50
+
+      status_color = health["status"] == "healthy" ? :green : :red
+      puts "Status: #{health['status'].upcase}".colorize(status_color)
+      puts "Version: #{health['version']}"
+      puts "Uptime: #{health['uptime_seconds'].to_i}s"
+      puts "\n📊 Statistics:"
+      puts "  Processed: #{stats.total_processed}"
+      puts "  Anomalies: #{stats.total_anomalies}"
+      puts "  Anomaly Rate: #{(stats.anomaly_rate * 100).round(2)}%"
+      puts "  Approval Rate: #{stats.approval_rate}%"
+    rescue Guardian::ConnectionError => e
+      puts "❌ Error: #{e.message}".colorize(:red)
+    end
+
+    desc "transaction STATUS COUNT", "Send a transaction"
+    def transaction(status, count)
+      client = build_client
+      result = client.send_transaction(status: status, count: count.to_i)
+
+      puts "\n📤 Transaction Sent".colorize(:cyan)
+      puts "=" * 50
+
+      level_color = case result.alert_level
+        when "CRITICAL" then :red
+        when "WARNING" then :yellow
+        else :green
+      end
+
+      puts "Alert Level: #{result.alert_level}".colorize(level_color)
+      puts "Anomaly Score: #{result.anomaly_score.round(4)}"
+      puts "Is Anomaly: #{result.anomaly? ? 'YES ⚠️' : 'NO ✅'}"
+      
+      if result.rule_violations.any?
+        puts "\nViolations:".colorize(:yellow)
+        result.rule_violations.each { |v| puts "  • #{v}" }
+      end
+      
+      puts "\n💡 #{result.recommendation}"
+    rescue Guardian::RateLimitError => e
+      puts "⏳ #{e.message}".colorize(:yellow)
+    rescue Guardian::ConnectionError => e
+      puts "❌ Error: #{e.message}".colorize(:red)
+    end
+
+    desc "anomalies", "List recent anomalies"
+    option :limit, type: :numeric, default: 10, desc: "Number of anomalies"
+    option :level, type: :string, desc: "Filter by level (CRITICAL, WARNING)"
+    def anomalies
+      client = build_client
+      list = client.anomalies(limit: options[:limit], level: options[:level])
+
+      puts "\n🚨 Recent Anomalies".colorize(:cyan)
+      
+      if list.empty?
+        puts "No anomalies found ✅".colorize(:green)
+        return
+      end
+
+      rows = list.map do |a|
+        level_color = a.critical? ? :red : :yellow
+        [a.timestamp, a.alert_level.colorize(level_color), a.score.round(3), a.violations.first(2).join(", ")]
+      end
+
+      table = ::Terminal::Table.new(headings: ["Timestamp", "Level", "Score", "Violations"], rows: rows)
+      puts table
+    rescue Guardian::ConnectionError => e
+      puts "❌ Error: #{e.message}".colorize(:red)
+    end
+
+    desc "shugo SUBCOMMAND", "Shugo prediction engine commands"
+    subcommand "shugo", Class.new(Thor) {
+      class_option :url, type: :string, default: "http://localhost:8001"
+
+      desc "status", "Show Shugo status"
+      def status
+        client = Guardian::Client.new(api_url: options[:url])
+        s = client.shugo.status
+
+        puts "\n🛡️  SHUGO 守護 Status".colorize(:cyan)
+        puts "=" * 50
+        
+        status_color = s["status"] == "ready" ? :green : :yellow
+        puts "Status: #{s['status'].upcase}".colorize(status_color)
+        puts "Observations: #{s['observations']}"
+        puts "Hourly Coverage: #{s['hourly_coverage']}/24"
+        puts "Daily Coverage: #{s['daily_coverage']}/7"
+        puts "Patterns Detected: #{s['patterns_detected']}"
+      end
+
+      desc "predict [MINUTES]", "Predict volume"
+      def predict(minutes = 30)
+        client = Guardian::Client.new(api_url: options[:url])
+        p = client.shugo.predict(minutes: minutes.to_i)["prediction"]
+
+        puts "\n🔮 Shugo Prediction (#{minutes} min)".colorize(:cyan)
+        puts "=" * 50
+        puts "Predicted Volume: #{p['predicted_volume'].round(1)}"
+        puts "Confidence: #{p['confidence'].round(1)}%"
+        puts "Trend: #{p['trend']}"
+        
+        prob_color = p['alert_probability'] > 60 ? :red : p['alert_probability'] > 30 ? :yellow : :green
+        puts "Alert Probability: #{p['alert_probability'].round(1)}%".colorize(prob_color)
+        puts "\n⚠️  #{p['warning']}" if p['warning']
+      end
+
+      desc "forecast [HOURS]", "Forecast volume"
+      def forecast(hours = 6)
+        client = Guardian::Client.new(api_url: options[:url])
+        f = client.shugo.forecast(hours: hours.to_i)
+
+        puts "\n📈 Shugo Forecast (#{hours} hours)".colorize(:cyan)
+        
+        rows = f["predictions"].map do |p|
+          prob_color = p['alert_probability'] > 60 ? :red : p['alert_probability'] > 30 ? :yellow : :green
+          [p['time'], p['predicted_volume'].round(1), "#{p['confidence'].round(1)}%", p['trend'], "#{p['alert_probability'].round(1)}%".colorize(prob_color)]
+        end
+
+        table = ::Terminal::Table.new(headings: ["Time", "Volume", "Confidence", "Trend", "Alert %"], rows: rows)
+        puts table
+      end
+
+      desc "patterns", "Show detected patterns"
+      def patterns
+        client = Guardian::Client.new(api_url: options[:url])
+        p = client.shugo.patterns
+
+        puts "\n🔍 Detected Patterns".colorize(:cyan)
+        
+        if p["patterns"].empty?
+          puts "No patterns detected yet".colorize(:yellow)
+          return
+        end
+
+        p["patterns"].each do |pattern|
+          puts "\n#{pattern['name']}".colorize(:white).bold
+          puts "  #{pattern['description']}"
+          puts "  Confidence: #{pattern['confidence']}% | Impact: #{pattern['impact']}"
+        end
+      end
+
+      desc "train", "Train Shugo with simulated data"
+      def train
+        client = Guardian::Client.new(api_url: options[:url])
+        puts "🎯 Training Shugo...".colorize(:cyan)
+        result = client.shugo.train
+        puts "✅ Trained! Observations: #{result['observations_added']}".colorize(:green)
+      end
+    }
+
+    desc "version", "Show version"
+    def version
+      puts "Guardian Client v#{Guardian::VERSION}"
+    end
+
+    private
+
+    def build_client
+      Guardian::Client.new(api_url: options[:url], api_key: options[:key])
+    end
+  end
+end
+
+Guardian::CLI.start(ARGV)
