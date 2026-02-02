@@ -1,203 +1,299 @@
-# 📘 RUNBOOK - TRANSACTION GUARDIAN
+# 📘 RUNBOOK - TRANSACTION GUARDIAN v2.2
 
-## Guia de Resposta a Incidentes
+> Guia de Resposta a Incidentes - Atualizado Fevereiro 2026
 
 ---
 
 ## 📑 ÍNDICE
 
 1. [Visão Geral do Sistema](#1-visão-geral-do-sistema)
-2. [Alertas e Respostas](#2-alertas-e-respostas)
-3. [Procedimentos de Diagnóstico](#3-procedimentos-de-diagnóstico)
-4. [Ações de Mitigação](#4-ações-de-mitigação)
-5. [Escalação](#5-escalação)
-6. [Contatos](#6-contatos)
+2. [URLs e Acessos](#2-urls-e-acessos)
+3. [Alertas e Respostas](#3-alertas-e-respostas)
+4. [Shugo - Predição de Incidentes](#4-shugo---predição-de-incidentes)
+5. [Procedimentos de Diagnóstico](#5-procedimentos-de-diagnóstico)
+6. [Ações de Mitigação](#6-ações-de-mitigação)
+7. [Ruby CLI - Comandos Úteis](#7-ruby-cli---comandos-úteis)
+8. [Telegram Bot](#8-telegram-bot)
+9. [Escalação](#9-escalação)
+10. [Contatos](#10-contatos)
 
 ---
 
 ## 1. VISÃO GERAL DO SISTEMA
 
-### 1.1 Arquitetura
-
+### 1.1 Arquitetura Completa
 ```
-┌─────────────┐    ┌─────────────┐    ┌─────────────┐
-│   API       │───▶│ Prometheus  │───▶│  Grafana    │
-│  (8001)     │    │   (9091)    │    │   (3002)    │
-└─────────────┘    └──────┬──────┘    └─────────────┘
-                         │
-                   ┌─────▼─────┐
-                   │Alertmanager│
-                   │   (9093)   │
-                   └───────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                    TRANSACTION GUARDIAN v2.2                     │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│   ┌──────────┐    ┌─────────────┐    ┌─────────────┐           │
+│   │  Ruby    │───▶│   FastAPI   │───▶│   Shugo     │           │
+│   │  CLI     │    │    :8001    │    │  守護       │           │
+│   └──────────┘    └──────┬──────┘    └─────────────┘           │
+│                          │                                      │
+│        ┌─────────────────┼─────────────────┐                   │
+│        ▼                 ▼                 ▼                   │
+│   ┌─────────┐     ┌─────────────┐   ┌─────────────┐           │
+│   │  Redis  │     │ TimescaleDB │   │   MLflow    │           │
+│   │  :6379  │     │    :5432    │   │   :5000     │           │
+│   └─────────┘     └─────────────┘   └─────────────┘           │
+│        │                 │                 │                   │
+│        └─────────────────┼─────────────────┘                   │
+│                          ▼                                      │
+│   ┌──────────┐    ┌─────────────┐   ┌─────────────┐           │
+│   │Prometheus│───▶│   Grafana   │   │  Telegram   │           │
+│   │  :9091   │    │   :3002     │   │    Bot      │           │
+│   └────┬─────┘    └─────────────┘   └─────────────┘           │
+│        │                                                        │
+│        ▼                                                        │
+│   ┌──────────────┐                                             │
+│   │ Alertmanager │                                             │
+│   │    :9093     │                                             │
+│   └──────────────┘                                             │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-### 1.2 URLs de Acesso
+### 1.2 Componentes
+
+| Componente | Função | Criticidade |
+|------------|--------|-------------|
+| **FastAPI** | API principal | 🔴 CRÍTICO |
+| **Redis** | Cache + Rate Limit | 🟡 ALTO |
+| **TimescaleDB** | Persistência | 🟡 ALTO |
+| **Shugo** | Predição de anomalias | 🟢 MÉDIO |
+| **Prometheus** | Métricas | 🟢 MÉDIO |
+| **Grafana** | Dashboards | 🟢 MÉDIO |
+| **Telegram Bot** | Alertas | 🟢 MÉDIO |
+| **MLflow** | ML versioning | 🔵 BAIXO |
+
+---
+
+## 2. URLS E ACESSOS
+
+### 2.1 Produção (GCP)
 
 | Serviço | URL | Credenciais |
 |---------|-----|-------------|
-| API Swagger | http://localhost:8001/docs | - |
-| Grafana | http://localhost:3002 | admin/admin |
-| Prometheus | http://localhost:9091 | - |
-| Alertmanager | http://localhost:9093 | - |
+| **API Docs** | http://34.39.251.57:8001/docs | - |
+| **Shugo Dashboard** | http://34.39.251.57:8001/shugo/dashboard | - |
+| **Grafana** | http://34.39.251.57:3002 | Sob demanda |
+| **Prometheus** | http://34.39.251.57:9091 | - |
+| **Alertmanager** | http://34.39.251.57:9093 | - |
+| **MLflow** | http://34.39.251.57:5000 | - |
+| **Redis Commander** | http://34.39.251.57:8081 | - |
+| **pgAdmin** | http://34.39.251.57:5050 | Sob demanda |
+| **Telegram Bot** | @omega_transaction_bot | Senha requerida |
 
-### 1.3 Métricas Principais
+### 2.2 Local (Desenvolvimento)
 
-| Métrica | Descrição | Threshold |
-|---------|-----------|-----------|
-| `transaction_guardian_total` | Total de transações | - |
-| `transaction_guardian_anomalies` | Anomalias detectadas | < 10% |
-| `transaction_guardian_current_count` | Volume atual | > 50 |
-| `transaction_guardian_approval_rate` | Taxa de aprovação | > 90% |
+| Serviço | URL |
+|---------|-----|
+| API | http://localhost:8001 |
+| Grafana | http://localhost:3002 |
+| Prometheus | http://localhost:9091 |
+
+### 2.3 Autenticação API
+```bash
+# Login JWT
+curl -X POST http://localhost:8001/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username": "admin", "password": "<senha>"}'
+
+# Usar API Key
+curl http://localhost:8001/stats \
+  -H "X-API-Key: <api-key>"
+```
 
 ---
 
-## 2. ALERTAS E RESPOSTAS
+## 3. ALERTAS E RESPOSTAS
 
-### 🚨 ALERT: ZeroTransactions
+### 🚨 CRITICAL: ZeroTransactions
 
-**Severidade:** CRITICAL (P1)  
 **Condição:** `count == 0` por 1 minuto  
-**Impacto:** Possível outage total
+**Impacto:** Possível outage total  
+**Severidade:** P1
 
-#### Diagnóstico
-
+#### Diagnóstico Rápido
 ```bash
-# 1. Verificar se API está respondendo
+# 1. Health check
 curl http://localhost:8001/health
 
-# 2. Verificar métricas
+# 2. Verificar stats
 curl http://localhost:8001/stats | jq
 
-# 3. Verificar logs
+# 3. Verificar Shugo (previa alerta?)
+curl http://localhost:8001/shugo/status
+
+# 4. Logs
 docker logs guardian-api --tail 50
 ```
 
-#### Ações Imediatas
+#### Ações
 
-1. ✅ Verificar status da API (`/health`)
-2. ✅ Verificar upstream (payment gateway)
-3. ✅ Verificar rede/conectividade
-4. ✅ Verificar logs de erro
-5. ⚠️ Se necessário, escalar para P1
-
-#### Comando de Verificação Rápida
-
-```bash
-# Verificação completa
-curl -s http://localhost:8001/health && \
-curl -s http://localhost:8001/stats | jq '.metrics'
-```
+1. ✅ Verificar se API responde (`/health`)
+2. ✅ Verificar se Shugo previu o problema
+3. ✅ Verificar upstream (gateway de pagamento)
+4. ✅ Verificar rede/conectividade
+5. ⚠️ Se não resolver em 5min, escalar para P1
 
 ---
 
-### ⚠️ ALERT: LowVolume
+### 🚨 CRITICAL: LowApprovalRate
 
-**Severidade:** WARNING (P2)  
-**Condição:** `count < 50` por 2 minutos  
-**Impacto:** Degradação do serviço
-
-#### Diagnóstico
-
-```bash
-# Ver histórico de volume
-curl "http://localhost:9091/api/v1/query?query=transaction_guardian_current_count[5m]"
-
-# Ver tendência
-curl "http://localhost:9091/api/v1/query?query=rate(transaction_guardian_total[5m])"
-```
-
-#### Ações Imediatas
-
-1. ✅ Verificar se é horário de baixo movimento
-2. ✅ Comparar com histórico (mesmo dia/hora semana passada)
-3. ✅ Verificar status dos gateways upstream
-4. ⚠️ Se persistir por 5+ min, escalar para CRITICAL
-
----
-
-### ⚠️ ALERT: HighAnomalyRate
-
-**Severidade:** WARNING (P2)  
-**Condição:** `anomalias / total > 10%`  
-**Impacto:** Qualidade das transações
+**Condição:** `approval_rate < 70%` por 2 minutos  
+**Impacto:** Perda de receita  
+**Severidade:** P1
 
 #### Diagnóstico
-
 ```bash
-# Ver anomalias recentes
-curl "http://localhost:8001/anomalies?limit=20" | jq
+# Taxa atual
+curl http://localhost:8001/stats | jq '.status_distribution'
 
-# Ver distribuição por tipo
-curl http://localhost:8001/stats | jq '.metrics.status_counts'
+# Anomalias recentes
+curl http://localhost:8001/anomalies?limit=10 | jq
+
+# Ruby CLI
+./bin/guardian anomalies --limit 10 --level CRITICAL
 ```
 
-#### Ações Imediatas
+#### Ações
 
-1. ✅ Identificar tipo predominante de anomalia
-2. ✅ Verificar se é spike ou problema contínuo
-3. ✅ Analisar padrão (horário, tipo de transação)
-4. ⚠️ Investigar causa raiz
-
----
-
-### 🚨 ALERT: LowApprovalRate
-
-**Severidade:** CRITICAL (P1)  
-**Condição:** `approval_rate < 90%` por 2 minutos  
-**Impacto:** Perda de receita
-
-#### Diagnóstico
-
-```bash
-# Ver taxa de aprovação atual
-curl http://localhost:8001/stats | jq '.metrics.approval_rate'
-
-# Ver distribuição de status
-curl http://localhost:8001/stats | jq '.metrics.status_counts'
-```
-
-#### Ações Imediatas
-
-1. ✅ Verificar qual status está aumentando (failed/denied/reversed)
-2. ✅ Verificar auth_codes mais frequentes
+1. ✅ Identificar qual status está aumentando
+2. ✅ Verificar se Shugo alertou antes
 3. ✅ Contatar equipe de payments
-4. ⚠️ Escalar se necessário
+4. ⚠️ Escalar se persistir
 
 ---
 
-### ⚠️ ALERT: VolumeSpike
+### ⚠️ WARNING: LowVolume
 
-**Severidade:** WARNING (P2)  
-**Condição:** `count > 200% da média`  
-**Impacto:** Possível sobrecarga ou ataque
+**Condição:** `count < 50` por 2 minutos  
+**Impacto:** Degradação do serviço  
+**Severidade:** P2
 
 #### Diagnóstico
-
 ```bash
-# Ver pico vs média
-curl http://localhost:8001/stats | jq '{current: .metrics.current_count, avg: .metrics.avg_count}'
+# Verificar se Shugo previu
+curl http://localhost:8001/shugo/predict?minutes=30 | jq
 
-# Verificar se é legítimo (promoção, etc)
-curl "http://localhost:8001/anomalies?limit=10" | jq
+# Ver padrões (é horário esperado de baixo volume?)
+curl http://localhost:8001/shugo/patterns | jq
 ```
 
-#### Ações Imediatas
+#### Ações
 
-1. ✅ Verificar se há campanha/promoção ativa
-2. ✅ Verificar se é tráfego legítimo
-3. ✅ Monitorar recursos (CPU, memória)
-4. ⚠️ Se suspeito, investigar possível ataque
+1. ✅ Verificar se é horário de baixo movimento (Shugo patterns)
+2. ✅ Comparar com previsão do Shugo
+3. ✅ Se inesperado, verificar upstream
+4. ⚠️ Se persistir 5+ min, escalar para CRITICAL
 
 ---
 
-## 3. PROCEDIMENTOS DE DIAGNÓSTICO
+### ⚠️ WARNING: HighAnomalyRate
 
-### 3.1 Verificação de Saúde Geral
+**Condição:** `anomalies / total > 30%`  
+**Impacto:** Qualidade das transações  
+**Severidade:** P2
 
+#### Diagnóstico
+```bash
+# Anomalias recentes
+curl http://localhost:8001/anomalies?limit=20 | jq
+
+# Ruby CLI
+./bin/guardian anomalies --limit 20
+
+# Health score do Shugo
+curl http://localhost:8001/shugo/status | jq
+```
+
+---
+
+### ⚠️ WARNING: ShugoHighAlertProbability
+
+**Condição:** `alert_probability > 60%`  
+**Impacto:** Anomalia iminente  
+**Severidade:** P2
+
+> 🔮 **NOVO**: Este alerta vem do Shugo e indica que uma anomalia é **provável** nos próximos minutos.
+
+#### Diagnóstico
+```bash
+# Ver predição
+curl http://localhost:8001/shugo/predict?minutes=30 | jq
+
+# Ver forecast completo
+curl http://localhost:8001/shugo/forecast?hours=2 | jq
+
+# Ruby CLI
+./bin/guardian shugo predict 30
+```
+
+#### Ações
+
+1. ✅ Verificar Dashboard Shugo: http://34.39.251.57:8001/shugo/dashboard
+2. ✅ Preparar equipe para possível incidente
+3. ✅ Monitorar próximos 30 minutos
+4. ⚠️ Se alerta se concretizar, seguir procedimento correspondente
+
+---
+
+## 4. SHUGO - PREDIÇÃO DE INCIDENTES
+
+### 4.1 O que é o Shugo?
+
+**Shugo (守護)** = Guardião em japonês
+
+O Shugo é um engine de predição que **antecipa anomalias** antes que aconteçam, analisando:
+- Padrões por hora do dia
+- Padrões por dia da semana
+- Tendências recentes
+
+### 4.2 Dashboard
+
+**URL:** http://34.39.251.57:8001/shugo/dashboard
+
+O dashboard mostra:
+- 🎯 **Health Score**: Saúde do sistema (0-100)
+- 🔮 **Predição**: Volume esperado em 30min
+- 📈 **Forecast**: Gráfico de 6 horas
+- 🔍 **Padrões**: Comportamentos detectados
+
+### 4.3 Comandos Shugo
+```bash
+# Status
+curl http://localhost:8001/shugo/status
+
+# Predição 30 minutos
+curl http://localhost:8001/shugo/predict?minutes=30
+
+# Forecast 6 horas
+curl http://localhost:8001/shugo/forecast?hours=6
+
+# Padrões detectados
+curl http://localhost:8001/shugo/patterns
+
+# Treinar modelo
+curl -X POST http://localhost:8001/shugo/train
+```
+
+### 4.4 Interpretando Alertas Shugo
+
+| Alert Probability | Significado | Ação |
+|-------------------|-------------|------|
+| 0-30% | ✅ Normal | Monitoramento padrão |
+| 31-60% | 🟡 Atenção | Aumentar vigilância |
+| 61-100% | 🔴 Alto risco | Preparar para incidente |
+
+---
+
+## 5. PROCEDIMENTOS DE DIAGNÓSTICO
+
+### 5.1 Health Check Completo
 ```bash
 #!/bin/bash
-# health_check.sh
-
 echo "🔍 Transaction Guardian - Health Check"
 echo "======================================="
 
@@ -205,13 +301,17 @@ echo "======================================="
 echo -n "API: "
 curl -s http://localhost:8001/health | jq -r '.status'
 
-# Prometheus
-echo -n "Prometheus: "
-curl -s http://localhost:9091/-/healthy && echo "OK" || echo "FAIL"
+# Shugo
+echo -n "Shugo: "
+curl -s http://localhost:8001/shugo/status | jq -r '.status'
 
-# Grafana
-echo -n "Grafana: "
-curl -s http://localhost:3002/api/health | jq -r '.database'
+# Cache
+echo -n "Redis: "
+curl -s http://localhost:8001/cache/stats | jq -r '.connected'
+
+# Telegram
+echo -n "Telegram: "
+curl -s http://localhost:8001/telegram/status | jq -r '.status'
 
 # Containers
 echo ""
@@ -219,94 +319,143 @@ echo "Containers:"
 docker ps --filter "name=guardian" --format "{{.Names}}: {{.Status}}"
 ```
 
-### 3.2 Verificar Métricas
-
+### 5.2 Verificar Métricas
 ```bash
-# Todas as métricas
-curl http://localhost:8001/metrics
-
-# Estatísticas formatadas
+# Stats completos
 curl http://localhost:8001/stats | jq
 
-# Query específica no Prometheus
-curl "http://localhost:9091/api/v1/query?query=transaction_guardian_approval_rate"
+# Métricas Prometheus
+curl http://localhost:8001/metrics
+
+# Cache stats
+curl http://localhost:8001/cache/stats | jq
 ```
 
-### 3.3 Verificar Logs
-
+### 5.3 Verificar Logs
 ```bash
 # Logs da API
 docker logs guardian-api --tail 100
 
-# Logs com filtro de erro
+# Filtrar erros
 docker logs guardian-api 2>&1 | grep -i error
 
-# Logs do Prometheus
-docker logs guardian-prometheus --tail 50
-
-# Logs do Alertmanager
-docker logs guardian-alertmanager --tail 50
-```
-
-### 3.4 Verificar Alertas Ativos
-
-```bash
-# No Prometheus
-curl http://localhost:9091/api/v1/alerts | jq
-
-# No Alertmanager
-curl http://localhost:9093/api/v2/alerts | jq
+# Logs em tempo real
+docker logs -f guardian-api
 ```
 
 ---
 
-## 4. AÇÕES DE MITIGAÇÃO
+## 6. AÇÕES DE MITIGAÇÃO
 
-### 4.1 Reiniciar API
-
+### 6.1 Reiniciar API
 ```bash
 docker restart guardian-api
-
-# Verificar se voltou
 sleep 5
 curl http://localhost:8001/health
 ```
 
-### 4.2 Reiniciar Stack Completa
-
+### 6.2 Reiniciar Stack Completa
 ```bash
-cd task-3.2/infrastructure
+cd ~/cloudwalk-challenge/task-3.2/infrastructure
 docker compose restart
-
-# Verificar todos os serviços
 docker ps --filter "name=guardian"
 ```
 
-### 4.3 Rebuild da API
-
+### 6.3 Rebuild da API
 ```bash
-cd task-3.2/infrastructure
+cd ~/cloudwalk-challenge/task-3.2/infrastructure
 docker compose up -d --build guardian-api
 ```
 
-### 4.4 Reset de Métricas
-
+### 6.4 Limpar Cache Redis
 ```bash
-# Reset contadores (cuidado em produção!)
-curl -X POST http://localhost:8001/reset
+docker exec guardian-redis redis-cli FLUSHALL
 ```
 
-### 4.5 Forçar Reload do Prometheus
-
+### 6.5 Re-treinar Shugo
 ```bash
-curl -X POST http://localhost:9091/-/reload
+curl -X POST http://localhost:8001/shugo/train
 ```
 
 ---
 
-## 5. ESCALAÇÃO
+## 7. RUBY CLI - COMANDOS ÚTEIS
 
-### Matriz de Escalação
+### 7.1 Instalação
+```bash
+cd ~/cloudwalk-challenge/task-3.2/ruby-sdk
+gem install httparty thor terminal-table colorize
+```
+
+### 7.2 Comandos
+```bash
+# Status geral
+./bin/guardian status --url http://localhost:8001
+
+# Enviar transação
+./bin/guardian transaction approved 150
+
+# Listar anomalias
+./bin/guardian anomalies --limit 10 --level CRITICAL
+
+# Shugo status
+./bin/guardian shugo status
+
+# Shugo predição
+./bin/guardian shugo predict 30
+
+# Shugo forecast
+./bin/guardian shugo forecast 6
+
+# Shugo padrões
+./bin/guardian shugo patterns
+
+# Treinar Shugo
+./bin/guardian shugo train
+```
+
+---
+
+## 8. TELEGRAM BOT
+
+### 8.1 Configuração
+
+**Bot:** @omega_transaction_bot
+
+### 8.2 Comandos do Bot
+
+| Comando | Descrição |
+|---------|-----------|
+| `/start <senha>` | Autenticar |
+| `/status` | Status do sistema |
+| `/stats` | Estatísticas |
+| `/anomalies` | Últimas anomalias |
+| `/health` | Health check |
+| `/subscribe` | Receber alertas |
+| `/unsubscribe` | Parar alertas |
+
+### 8.3 Gerenciamento
+```bash
+# Status do bot
+curl http://localhost:8001/telegram/status
+
+# Iniciar bot
+curl -X POST http://localhost:8001/telegram/start
+
+# Parar bot
+curl -X POST http://localhost:8001/telegram/stop
+
+# Enviar alerta manual
+curl -X POST http://localhost:8001/telegram/send-alert \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Teste de alerta"}'
+```
+
+---
+
+## 9. ESCALAÇÃO
+
+### 9.1 Matriz de Escalação
 
 | Severidade | Tempo para Ack | Tempo para Escalar | Para Quem |
 |------------|----------------|-------------------|-----------|
@@ -314,15 +463,15 @@ curl -X POST http://localhost:9091/-/reload
 | P2 (WARNING) | 15 min | 30 min | Tech Lead |
 | P3 (INFO) | 30 min | 2 horas | Equipe |
 
-### Quando Escalar
+### 9.2 Quando Escalar
 
-- ❌ Não conseguiu identificar a causa em 15 min
+- ❌ Não identificou causa em 15 min
 - ❌ Impacto em clientes confirmado
-- ❌ Precisa de acesso/permissão adicional
-- ❌ Problema em sistema externo (gateway, etc)
+- ❌ Shugo previu e não conseguiu prevenir
+- ❌ Precisa de acesso adicional
+- ❌ Problema em sistema externo
 
-### Template de Escalação
-
+### 9.3 Template de Escalação
 ```
 🚨 ESCALAÇÃO - [SEVERIDADE]
 
@@ -331,33 +480,32 @@ Início: HH:MM
 Duração: XX min
 
 Impacto: [Descrição]
+Shugo alertou antes? [Sim/Não]
 Causa: [Identificada/Investigando]
 Ações tomadas: [Lista]
 Preciso de: [O que precisa]
 
-cc: @oncall @techleads
+Dashboard: http://34.39.251.57:8001/shugo/dashboard
 ```
 
 ---
 
-## 6. CONTATOS
+## 10. CONTATOS
 
-### Equipe On-Call
+### 10.1 Desenvolvedor
 
-| Função | Contato | Horário |
-|--------|---------|---------|
-| SRE On-Call | #sre-oncall | 24/7 |
-| Payments Team | #payments | Business hours |
-| Backend Team | #backend | Business hours |
+| Função | Contato |
+|--------|---------|
+| **Sérgio Henrique** | sergio@lognullsec.com |
+| LinkedIn | linkedin.com/in/akasergiosilva |
+| GitHub | github.com/akamitatrush |
 
-### Canais Slack
+### 10.2 Canais
 
 | Canal | Propósito |
 |-------|-----------|
-| #incidents | Incidentes ativos |
-| #incidents-critical | Apenas P1 |
-| #monitoring-alerts | Alertas automáticos |
-| #transaction-guardian | Discussões do sistema |
+| Telegram Bot | Alertas automáticos |
+| GitHub Issues | Bugs e features |
 
 ---
 
@@ -366,26 +514,30 @@ cc: @oncall @techleads
 ### Ao Receber Alerta
 
 - [ ] Ler alerta e entender severidade
-- [ ] Verificar dashboards no Grafana
+- [ ] Verificar se Shugo previu antes
+- [ ] Acessar Dashboard Shugo
+- [ ] Verificar dashboards Grafana
 - [ ] Executar diagnóstico básico
-- [ ] Comunicar no canal apropriado
 
 ### Durante Investigação
 
 - [ ] Documentar timeline
 - [ ] Coletar evidências (logs, métricas)
+- [ ] Usar Ruby CLI para diagnóstico
 - [ ] Identificar causa raiz
 - [ ] Aplicar mitigação
 
 ### Pós-Resolução
 
 - [ ] Confirmar métricas normalizadas
-- [ ] Atualizar canal com resolução
+- [ ] Verificar Health Score do Shugo
+- [ ] Documentar resolução
 - [ ] Criar ticket de follow-up
 - [ ] Agendar post-mortem se P1/P2
 
 ---
 
-*Runbook Version: 1.0*  
-*Last Updated: 2025-01-19*  
-*Owner: Monitoring Team*
+**Runbook Version:** 2.2  
+**Last Updated:** 02 Fevereiro 2026  
+**Owner:** Sérgio Henrique  
+**Sistema:** Transaction Guardian + Shugo 守護
