@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🛡️ Shugo 守護 - Prediction Dashboard</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #6366f1; --danger: #ef4444; --success: #10b981; --warning: #f59e0b; }
+        body { background: linear-gradient(135deg, #020617 0%, #0f172a 50%, #1e1b4b 100%); min-height: 100vh; font-family: 'Segoe UI', sans-serif; }
+        .orbitron { font-family: 'Orbitron', monospace; }
+        .kanji { font-family: 'Noto Sans JP', sans-serif; }
+        .glass { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(20px); border: 1px solid rgba(99, 102, 241, 0.2); }
+        .glow { box-shadow: 0 0 30px rgba(99, 102, 241, 0.3); }
+        .glow-danger { box-shadow: 0 0 30px rgba(239, 68, 68, 0.4); }
+        .float { animation: float 3s ease-in-out infinite; }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        .pulse { animation: pulse 2s ease-in-out infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+        .card-hover { transition: all 0.3s ease; }
+        .card-hover:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.3); }
+        .progress-bar { height: 8px; border-radius: 4px; background: rgba(255,255,255,0.1); overflow: hidden; }
+        .progress-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
+        .gauge-container { position: relative; width: 180px; height: 90px; overflow: hidden; }
+        .gauge-bg { position: absolute; width: 180px; height: 180px; border-radius: 50%; background: conic-gradient(from 180deg, #ef4444 0deg, #f59e0b 60deg, #10b981 120deg, transparent 180deg); opacity: 0.3; }
+        .gauge-fill { position: absolute; width: 180px; height: 180px; border-radius: 50%; transition: all 1s ease; }
+        .gauge-center { position: absolute; width: 140px; height: 140px; background: #020617; border-radius: 50%; top: 20px; left: 20px; }
+        .alert-pulse { animation: alertPulse 1s ease-in-out infinite; }
+        @keyframes alertPulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); } 50% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); } }
+    </style>
+</head>
+<body class="text-white p-4 md:p-8">
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        const HealthGauge = ({ value }) => {
+            const color = value >= 70 ? '#10b981' : value >= 40 ? '#f59e0b' : '#ef4444';
+            const angle = (value / 100) * 180;
+            return (
+                <div className="flex flex-col items-center">
+                    <div className="gauge-container">
+                        <div className="gauge-bg"></div>
+                        <div className="gauge-fill" style={{ background: `conic-gradient(from 180deg, ${color} 0deg, ${color} ${angle}deg, transparent ${angle}deg)` }}></div>
+                        <div className="gauge-center flex items-end justify-center pb-2">
+                            <span className="text-4xl font-bold orbitron" style={{ color }}>{value}</span>
+                            <span className="text-lg text-gray-400 ml-1">%</span>
+                        </div>
+                    </div>
+                    <span className="text-gray-400 mt-2 text-sm">Health Score</span>
+                </div>
+            );
+        };
+
+        const StatusCard = ({ title, value, icon, color, alert }) => (
+            <div className={`glass rounded-2xl p-5 card-hover ${alert ? 'alert-pulse glow-danger' : 'glow'}`}>
+                <div className="flex items-center justify-between mb-2">
+                    <span className="text-gray-400 text-sm uppercase tracking-wider">{title}</span>
+                    <span className="text-2xl">{icon}</span>
+                </div>
+                <div className={`text-3xl font-bold orbitron ${color}`}>{value}</div>
+            </div>
+        );
+
+        const MiniCard = ({ icon, label, value, color }) => (
+            <div className="glass rounded-xl p-4 flex items-center gap-3 card-hover">
+                <span className="text-2xl">{icon}</span>
+                <div>
+                    <div className="text-gray-400 text-xs uppercase">{label}</div>
+                    <div className={`font-bold orbitron ${color}`}>{value}</div>
+                </div>
+            </div>
+        );
+
+        const PatternCard = ({ pattern }) => {
+            const colors = { positive: 'border-green-500/30 bg-green-500/10', negative: 'border-red-500/30 bg-red-500/10', neutral: 'border-blue-500/30 bg-blue-500/10' };
+            return (
+                <div className={`border rounded-xl p-4 card-hover ${colors[pattern.impact] || colors.neutral}`}>
+                    <div className="flex justify-between items-center mb-2">
+                        <span className="font-semibold">{pattern.name}</span>
+                        <span className="text-indigo-400 text-sm orbitron">{pattern.confidence}%</span>
+                    </div>
+                    <p className="text-gray-400 text-sm">{pattern.description}</p>
+                    <div className="mt-3 progress-bar">
+                        <div className="progress-fill bg-indigo-500" style={{ width: `${pattern.confidence}%` }}></div>
+                    </div>
+                </div>
+            );
+        };
+
+        const ForecastChart = ({ forecasts }) => {
+            const chartRef = useRef(null);
+            const chartInstance = useRef(null);
+            useEffect(() => {
+                if (chartRef.current && forecasts.length > 0) {
+                    const ctx = chartRef.current.getContext('2d');
+                    if (chartInstance.current) chartInstance.current.destroy();
+                    const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+                    gradient.addColorStop(0, 'rgba(99, 102, 241, 0.3)');
+                    gradient.addColorStop(1, 'rgba(99, 102, 241, 0)');
+                    chartInstance.current = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: forecasts.map(f => f.time),
+                            datasets: [{
+                                label: 'Volume Previsto',
+                                data: forecasts.map(f => f.predicted_volume),
+                                borderColor: '#818cf8',
+                                backgroundColor: gradient,
+                                fill: true,
+                                tension: 0.4,
+                                borderWidth: 3
+                            }, {
+                                label: 'Prob. Alerta (%)',
+                                data: forecasts.map(f => f.alert_probability),
+                                borderColor: '#f87171',
+                                borderWidth: 2,
+                                borderDash: [5, 5],
+                                tension: 0.4,
+                                fill: false
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: { legend: { labels: { color: '#9ca3af' } } },
+                            scales: {
+                                x: { ticks: { color: '#6b7280' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                                y: { ticks: { color: '#6b7280' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+                            }
+                        }
+                    });
+                }
+            }, [forecasts]);
+            return <canvas ref={chartRef}></canvas>;
+        };
+
+        const ShugoDashboard = () => {
+            const [status, setStatus] = useState(null);
+            const [prediction, setPrediction] = useState(null);
+            const [forecast, setForecast] = useState([]);
+            const [patterns, setPatterns] = useState([]);
+            const [loading, setLoading] = useState(true);
+            const [lastUpdate, setLastUpdate] = useState(null);
+            const [training, setTraining] = useState(false);
+
+            const fetchData = async () => {
+                try {
+                    const [s, p, f, pt] = await Promise.all([
+                        fetch('/shugo/status').then(r => r.json()),
+                        fetch('/shugo/predict?minutes=30').then(r => r.json()),
+                        fetch('/shugo/forecast?hours=6').then(r => r.json()),
+                        fetch('/shugo/patterns').then(r => r.json())
+                    ]);
+                    setStatus(s);
+                    setPrediction(p.prediction);
+                    setForecast(f.predictions);
+                    setPatterns(pt.patterns);
+                    setLastUpdate(new Date().toLocaleTimeString());
+                    setLoading(false);
+                } catch (e) { console.error(e); }
+            };
+
+            const handleTrain = async () => {
+                setTraining(true);
+                await fetch('/shugo/train', { method: 'POST' });
+                await fetchData();
+                setTraining(false);
+            };
+
+            useEffect(() => { fetchData(); const i = setInterval(fetchData, 15000); return () => clearInterval(i); }, []);
+
+            if (loading) return (
+                <div className="flex flex-col items-center justify-center h-screen">
+                    <div className="text-8xl float">🛡️</div>
+                    <pre className="text-indigo-400 text-xs mt-4 opacity-70">{`
+   ███████╗██╗  ██╗██╗   ██╗ ██████╗  ██████╗ 
+   ██╔════╝██║  ██║██║   ██║██╔════╝ ██╔═══██╗
+   ███████╗███████║██║   ██║██║  ███╗██║   ██║
+   ╚════██║██╔══██║██║   ██║██║   ██║██║   ██║
+   ███████║██║  ██║╚██████╔╝╚██████╔╝╚██████╔╝
+   ╚══════╝╚═╝  ╚═╝ ╚═════╝  ╚═════╝  ╚═════╝`}</pre>
+                    <div className="text-gray-400 mt-4 orbitron pulse">Inicializando...</div>
+                </div>
+            );
+
+            const healthScore = Math.round(Math.max(0, 100 - (prediction?.alert_probability || 0)));
+            const isHighAlert = prediction?.alert_probability > 60;
+            const trend = prediction?.trend === 'up' ? '📈' : prediction?.trend === 'down' ? '📉' : '➡️';
+
+            return (
+                <div className="max-w-7xl mx-auto">
+                    <header className="text-center mb-8">
+                        <div className="text-6xl float mb-4">🛡️</div>
+                        <h1 className="text-4xl md:text-5xl font-black orbitron">
+                            <span className="text-indigo-400">SHUGO</span>
+                            <span className="kanji text-gray-400 ml-3">守護</span>
+                        </h1>
+                        <p className="text-gray-400 italic mt-2">"Vê o futuro, protege o presente"</p>
+                        <div className="flex items-center justify-center gap-4 mt-4">
+                            <span className="text-gray-500 text-sm">🕐 {lastUpdate}</span>
+                            <button onClick={handleTrain} disabled={training} className="glass rounded-lg px-4 py-2 text-sm card-hover">
+                                {training ? '⏳ Treinando...' : '🎯 Treinar'}
+                            </button>
+                        </div>
+                    </header>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                        <div className="glass rounded-2xl p-6 glow flex flex-col items-center justify-center">
+                            <h3 className="text-gray-400 uppercase text-sm mb-4">Sistema de Saúde</h3>
+                            <HealthGauge value={healthScore} />
+                            <span className={`text-sm mt-4 ${healthScore >= 70 ? 'text-green-400' : healthScore >= 40 ? 'text-yellow-400' : 'text-red-400'}`}>
+                                {healthScore >= 70 ? '✅ Saudável' : healthScore >= 40 ? '⚠️ Atenção' : '🚨 Crítico'}
+                            </span>
+                        </div>
+
+                        <div className={`glass rounded-2xl p-6 ${isHighAlert ? 'glow-danger alert-pulse' : 'glow'} text-center`}>
+                            <h3 className="text-gray-400 uppercase text-sm mb-4">Predição (30min)</h3>
+                            <div className="text-5xl font-black orbitron text-indigo-400">{prediction?.predicted_volume?.toFixed(0)}</div>
+                            <div className="text-gray-400 text-sm mt-2">Volume previsto</div>
+                            <div className="flex justify-center gap-6 mt-4">
+                                <div><div className="text-2xl">{trend}</div><div className="text-xs text-gray-500">Tendência</div></div>
+                                <div><div className="text-xl orbitron text-cyan-400">{prediction?.confidence?.toFixed(0)}%</div><div className="text-xs text-gray-500">Confiança</div></div>
+                            </div>
+                        </div>
+
+                        <div className={`glass rounded-2xl p-6 ${isHighAlert ? 'glow-danger' : 'glow'} text-center`}>
+                            <h3 className="text-gray-400 uppercase text-sm mb-4">Risco de Anomalia</h3>
+                            <div className={`text-5xl font-black orbitron ${isHighAlert ? 'text-red-400' : prediction?.alert_probability > 30 ? 'text-yellow-400' : 'text-green-400'}`}>
+                                {prediction?.alert_probability?.toFixed(0)}%
+                            </div>
+                            <div className="mt-4 progress-bar">
+                                <div className={`progress-fill ${isHighAlert ? 'bg-red-500' : prediction?.alert_probability > 30 ? 'bg-yellow-500' : 'bg-green-500'}`} style={{ width: `${prediction?.alert_probability}%` }}></div>
+                            </div>
+                            {prediction?.warning && <div className="mt-3 text-sm text-yellow-400 bg-yellow-500/10 rounded-lg p-2">{prediction.warning}</div>}
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                        <MiniCard icon="📊" label="Observações" value={status?.observations?.toLocaleString()} color="text-purple-400" />
+                        <MiniCard icon="🕐" label="Horas" value={`${status?.hourly_coverage}/24`} color="text-cyan-400" />
+                        <MiniCard icon="📅" label="Dias" value={`${status?.daily_coverage}/7`} color="text-teal-400" />
+                        <MiniCard icon="🔍" label="Padrões" value={patterns?.length} color="text-orange-400" />
+                    </div>
+
+                    <div className="glass rounded-2xl p-6 mb-8 glow">
+                        <h3 className="text-xl font-bold mb-4 orbitron">📈 Forecast 6 Horas</h3>
+                        <div style={{ height: '300px' }}><ForecastChart forecasts={forecast} /></div>
+                    </div>
+
+                    <div className="glass rounded-2xl p-6 glow">
+                        <h3 className="text-xl font-bold mb-4 orbitron">🔍 Padrões Detectados</h3>
+                        {patterns.length > 0 ? (
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                {patterns.map((p, i) => <PatternCard key={i} pattern={p} />)}
+                            </div>
+                        ) : <p className="text-gray-400 text-center py-8">🔄 Coletando dados...</p>}
+                    </div>
+
+                    <footer className="text-center mt-8 text-gray-500 text-sm">
+                        <p className="orbitron">Transaction Guardian v2.2 | Phase 7: Shugo 守護</p>
+                        <p>CloudWalk Monitoring Intelligence Challenge</p>
+                    </footer>
+                </div>
+            );
+        };
+
+        ReactDOM.render(<ShugoDashboard />, document.getElementById('root'));
+    </script>
+</body>
+</html>

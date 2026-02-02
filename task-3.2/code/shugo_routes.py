@@ -152,3 +152,12 @@ async def train_from_history():
         "observations_added": 500,
         "shugo_status": shugo.get_status()
     }
+
+
+@router.get("/dashboard", include_in_schema=False)
+async def shugo_dashboard():
+    """🖥️ Dashboard do Shugo"""
+    from fastapi.responses import FileResponse
+    import os
+    dashboard_path = os.path.join(os.path.dirname(__file__), "static", "shugo_dashboard.html")
+    return FileResponse(dashboard_path, media_type="text/html")

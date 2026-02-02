@@ -11,7 +11,7 @@ Phase 2: Performance
 Author: Sérgio (Candidate for Monitoring Intelligence Analyst)
 """
 
-from fastapi import FastAPI, HTTPException, BackgroundTasks, Request, Response
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Request, Response, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse, StreamingResponse
 from pydantic import BaseModel, Field
