@@ -1,8 +1,8 @@
-# 🛡️ Transaction Guardian v2.1
+# 🛡️ Transaction Guardian v2.2
 
 > **CloudWalk Monitoring Intelligence Challenge - Task 3.2**
 
-Sistema de monitoramento de transações em tempo real com detecção automática de anomalias, cache de alta performance, e autenticação segura.
+Sistema de monitoramento de transações em tempo real com detecção de anomalias, ML, alertas inteligentes e relatórios automáticos por IA.
 
 ---
 
@@ -11,11 +11,12 @@ Sistema de monitoramento de transações em tempo real com detecção automátic
 | Serviço | URL | Credenciais |
 |---------|-----|-------------|
 | **🔗 API Docs** | http://34.39.251.57:8001/docs | - |
-| **📊 Grafana** | http://34.39.251.57:3002 | `admin` / `admin` |
+| **📊 Grafana** | http://34.39.251.57:3002 | - |
 | **📈 Prometheus** | http://34.39.251.57:9091 | - |
 | **🚨 Alertmanager** | http://34.39.251.57:9093 | - |
 | **🔴 Redis Commander** | http://34.39.251.57:8081 | - |
-| **🐘 pgAdmin** | http://34.39.251.57:5050 | `admin@example.com` / `admin` |
+| **🐘 pgAdmin** | http://34.39.251.57:5050 | - |
+| **🧠 MLflow** | http://34.39.251.57:5000 | - |
 
 ---
 
@@ -24,12 +25,9 @@ Sistema de monitoramento de transações em tempo real com detecção automátic
 ### ✅ Phase 1: Foundation
 > TimescaleDB + Data Migration
 
-| Feature | Status |
-|---------|--------|
-| TimescaleDB | ✅ |
-| 42,920 transactions migrated | ✅ |
-| Hypertables & Continuous Aggregates | ✅ |
-| pgAdmin | ✅ |
+- TimescaleDB para séries temporais
+- 42,920+ transações migradas
+- Hypertables & Continuous Aggregates
 
 📄 [Phase 1 Documentation](docs/PHASE1_COMPLETE.md)
 
@@ -38,28 +36,58 @@ Sistema de monitoramento de transações em tempo real com detecção automátic
 ### ✅ Phase 2: Performance
 > Redis Cache + Rate Limiting
 
-| Feature | Status |
-|---------|--------|
-| Redis Cache (<10ms responses) | ✅ |
-| Rate Limiting (100 req/min) | ✅ |
-| Redis Commander UI | ✅ |
-| Cache Stats endpoint | ✅ |
+- Redis Cache (<10ms responses)
+- Rate Limiting (100 req/min)
+- Cache Stats endpoint
 
 📄 [Phase 2 Documentation](docs/PHASE2_COMPLETE.md)
 
 ---
 
-### ✅ Phase 3: Security ← ATUAL
+### ✅ Phase 3: Security
 > JWT + API Key Authentication
 
-| Feature | Status |
-|---------|--------|
-| JWT Authentication | ✅ |
-| API Key Authentication | ✅ |
-| Role-based Access (RBAC) | ✅ |
-| 3 Default Users | ✅ |
+- JWT Authentication (24h expiration)
+- API Key Authentication
+- Role-based Access Control (RBAC)
 
 📄 [Phase 3 Documentation](docs/PHASE3_COMPLETE.md)
+
+---
+
+### ✅ Phase 4: MLOps
+> MLflow Model Management
+
+- Model versioning & registry
+- Experiment tracking
+- Model promotion to Production
+- Drift detection
+
+📄 [Phase 4 Documentation](docs/PHASE4_COMPLETE.md)
+
+---
+
+### ✅ Phase 5: Telegram Bot
+> Real-time Alerts via Telegram
+
+- Bot: `@omega_transaction_bot`
+- Auto-alerts on CRITICAL/WARNING
+- Commands: `/status`, `/stats`, `/anomalies`, `/health`
+- Password protected
+
+📄 [Phase 5 Documentation](docs/PHASE5_COMPLETE.md)
+
+---
+
+### ✅ Phase 6: AI Summary
+> AI-powered Daily Reports
+
+- Automated daily reports
+- Anomaly analysis & insights
+- Health score calculation
+- Recommendations
+
+📄 [Phase 6 Documentation](docs/PHASE6_COMPLETE.md)
 
 ---
 
@@ -67,24 +95,19 @@ Sistema de monitoramento de transações em tempo real com detecção automátic
 
 | Phase | Focus | Status |
 |-------|-------|--------|
-| Phase 4 | MLOps (MLflow) | 📋 Planned |
-| Phase 5 | Clawdbot (Telegram) | 📋 Planned |
-| Phase 6 | Observability | 📋 Planned |
+| Phase 7 | Prediction Engine | 📋 Planned |
+| Phase 8 | ChatOps (Slack) | 📋 Planned |
+| Phase 9 | Kubernetes | 📋 Planned |
 
 ---
 
-## 🔐 Authentication (Phase 3)
+## 🔐 Authentication
 
 ### JWT Login
 ```bash
-# Get token
 curl -X POST http://34.39.251.57:8001/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"username": "admin", "password": "admin123"}'
-
-# Use token
-curl -H "Authorization: Bearer <token>" \
-  http://34.39.251.57:8001/auth/me
+  -d '{"username": "admin", "password": "<password>"}'
 ```
 
 ### API Key
@@ -97,9 +120,35 @@ curl -H "X-API-Key: guardian-api-key-2024" \
 
 | Username | Password | Role |
 |----------|----------|------|
-| `admin` | `admin123` | admin |
+| `admin` | `<password>` | admin |
 | `operator` | `operator123` | operator |
 | `viewer` | `viewer123` | viewer |
+
+---
+
+## 📱 Telegram Bot
+```
+Bot: @omega_transaction_bot
+Senha: <password>
+
+Comandos:
+/start <senha> - Autenticar
+/status        - Status do sistema
+/stats         - Estatísticas
+/anomalies     - Últimas anomalias
+/health        - Health check
+```
+
+---
+
+## 📊 AI Reports
+```bash
+# Gerar relatório
+curl http://34.39.251.57:8001/ai/report
+
+# Enviar por Telegram
+curl -X POST http://34.39.251.57:8001/ai/report/send
+```
 
 ---
 
@@ -107,52 +156,12 @@ curl -H "X-API-Key: guardian-api-key-2024" \
 
 | Requisito | Status | Implementação |
 |-----------|--------|---------------|
-| Endpoint que recebe transações | ✅ | `POST /transaction` |
-| Retorna recomendação de alerta | ✅ | `is_anomaly`, `alert_level`, `recommendation` |
-| Query para organizar dados | ✅ | `GET /anomalies?level=CRITICAL` |
-| Gráfico em tempo real | ✅ | Grafana (5 dashboards, 31 painéis) |
-| Modelo de anomalias | ✅ | Isolation Forest + Rules + Z-Score |
-| Sistema de notificação automática | ✅ | Alertmanager + Slack |
-
----
-
-## 🚀 Quick Start
-```bash
-cd task-3.2/infrastructure
-
-# Core services
-docker compose up -d --build
-
-# Phase 1: TimescaleDB
-docker compose -f docker-compose.timescale.yml up -d
-
-# Phase 2: Redis
-docker compose -f docker-compose.redis.yml up -d
-```
-
----
-
-## 📁 Project Structure
-```
-task-3.2/
-├── code/
-│   ├── main.py              # FastAPI v2.1
-│   ├── auth.py              # 🆕 JWT/API Key module
-│   ├── auth_routes.py       # 🆕 Auth endpoints
-│   ├── cache.py             # Redis cache
-│   ├── anomaly_detector.py  # ML + Rules
-│   └── alert_manager.py     # Notifications
-├── dashboards/              # 5 Grafana dashboards
-├── docs/
-│   ├── PHASE1_COMPLETE.md
-│   ├── PHASE2_COMPLETE.md
-│   └── PHASE3_COMPLETE.md   # 🆕
-├── infrastructure/
-│   ├── docker-compose.yml
-│   ├── docker-compose.redis.yml
-│   └── docker-compose.timescale.yml
-└── README.md
-```
+| Endpoint transações | ✅ | `POST /transaction` |
+| Recomendação de alerta | ✅ | `alert_level`, `recommendation` |
+| Query para dados | ✅ | `GET /anomalies?level=CRITICAL` |
+| Gráfico tempo real | ✅ | Grafana (5 dashboards) |
+| Modelo anomalias | ✅ | Isolation Forest + Z-Score |
+| Notificação automática | ✅ | Alertmanager + Telegram |
 
 ---
 
@@ -160,7 +169,7 @@ task-3.2/
 
 | Service | Port | Description |
 |---------|------|-------------|
-| API | 8001 | FastAPI v2.1 |
+| API | 8001 | FastAPI v2.2 |
 | Grafana | 3002 | Dashboards |
 | Prometheus | 9091 | Metrics |
 | Alertmanager | 9093 | Alerts |
@@ -168,6 +177,7 @@ task-3.2/
 | Redis Commander | 8081 | Redis UI |
 | TimescaleDB | 5432 | Database |
 | pgAdmin | 5050 | DB Admin |
+| MLflow | 5000 | ML Platform |
 
 ---
 
@@ -178,6 +188,42 @@ task-3.2/
 | Isolation Forest | 60% | Machine Learning |
 | Z-Score | 40% | Statistical |
 | Rule-based | Flags | Thresholds |
+
+---
+
+## 📁 Project Structure
+```
+task-3.2/
+├── code/
+│   ├── main.py              # FastAPI v2.2
+│   ├── auth.py              # JWT/API Key
+│   ├── auth_routes.py       # Auth endpoints
+│   ├── cache.py             # Redis cache
+│   ├── mlops.py             # MLflow integration
+│   ├── mlops_routes.py      # MLOps endpoints
+│   ├── telegram_bot.py      # Telegram bot
+│   ├── telegram_routes.py   # Telegram endpoints
+│   ├── ai_summary.py        # AI reports
+│   ├── ai_summary_routes.py # AI endpoints
+│   ├── anomaly_detector.py  # ML detection
+│   └── alert_manager.py     # Notifications
+├── dashboards/              # Grafana dashboards
+├── docs/                    # Phase documentation
+└── infrastructure/          # Docker configs
+```
+
+---
+
+## 🚀 Quick Start
+```bash
+cd task-3.2/infrastructure
+
+# All services
+docker compose up -d --build
+docker compose -f docker-compose.redis.yml up -d
+docker compose -f docker-compose.timescale.yml up -d
+docker compose -f docker-compose.mlflow.yml up -d
+```
 
 ---
 
@@ -197,4 +243,4 @@ task-3.2/
 
 *"Bombeiros que usam código para apagar incêndios." 🔥*
 
-**Branch:** `phase3-security` | **Version:** 2.1.0
+**Branch:** `phase6-ai-summary` | **Version:** 2.2.0
