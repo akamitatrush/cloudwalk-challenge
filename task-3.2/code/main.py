@@ -32,6 +32,8 @@ from .mlops_routes import router as mlops_router
 from .telegram_bot import send_anomaly_alert, get_bot
 from .telegram_routes import router as telegram_router
 from .ai_summary_routes import router as ai_router
+from .shugo_routes import router as shugo_router
+from .shugo import get_shugo
 from .auth import get_optional_user
 
 # ============== FASTAPI APP ==============
@@ -76,6 +78,7 @@ app.include_router(auth_router)
 app.include_router(mlops_router)
 app.include_router(telegram_router)
 app.include_router(ai_router)
+app.include_router(shugo_router)
 
 # CORS
 app.add_middleware(
@@ -245,6 +248,9 @@ async def analyze_transaction(tx: TransactionInput, background_tasks: Background
         state.recent_transactions = state.recent_transactions[-500:]
     
     update_metrics(tx.status.value, tx.count, result["is_anomaly"])
+    
+    # Alimentar Shugo com observação
+    get_shugo().add_observation(datetime.now(), tx.count, tx.status.value)
     
     if result["is_anomaly"]:
         state.anomalies_detected += 1
